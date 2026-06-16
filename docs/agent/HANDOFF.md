@@ -4,17 +4,20 @@
 
 ## Last updated
 
-2026-06-15 — **Stripped to empty PWA shell.**
+2026-06-16 — **Import module + automatic layout**
 
 ### What was done
 
-- **Kept:** neumorphic theme, full toolbar UI, Help modal, empty React Flow canvas, PWA/CI.
-- **Removed:** CSV parser, layout rules, routing engine, manual adjust, diagram nodes/edges, export/print, domain types, ~200 engine files.
-- **Moved to `src/components/`:** `CsvImportButton`, `MapEmbedButton` (stub), `calloutScale` helpers.
-- **Archived:** `LAYOUT_RULES.md`, rule dictionaries, refactor plan → `docs/archive/`.
-- **Deleted cursor rules:** `frozen-routing`, `layout-rules`, `simple-terms`.
-- **Scripts:** dropped `test:layout` / `test:engine`; `verify` = check + test:ci + build.
+- **`src/features/import/`** — `parseBentleyCsv`, cable leg identity, inspect report, `parseSdcJson`, `runImport()`; contract tests on 3 canonical + Example #1–#3 CSVs.
+- **`src/features/diagram/`** — `ConnectionGraph`, TIA ordering, `strandGroups`, `buildReactFlowGraph`.
+- **`src/features/layout/`** — `elkjs` integration, cable side assignment, horizontal + quad layout engines.
+- **`src/features/routing/`** — `routeConnections` with LaneBook (horizontal + quad).
+- **Canvas** — `CableNode`, `FiberAnchorNode`, `SplicePointNode`, `SpliceEdge`; import wired; inspect overlay; layout mode re-imports.
+- **Grid** — `quadZones.ts`; debug overlay supports quad zones.
+- **Docs** — [`IMPORT.md`](./IMPORT.md), [`SDC_JSON.md`](./SDC_JSON.md); updated ARCHITECTURE, examples README.
 
 ### Next session
 
-User directs rebuild order — likely CSV import + domain model first. Wire `handleImport` in `WorkflowCanvas.tsx` when parser lands.
+- User rule modules for layout/routing contracts.
+- Visual parity QA vs reference PNGs; layout tuning.
+- Wire export diagram config (`.sdc.json` serialize).

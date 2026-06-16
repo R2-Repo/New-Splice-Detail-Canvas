@@ -1,16 +1,20 @@
 import {
   Background,
+  BackgroundVariant,
   Controls,
   ReactFlow,
   ReactFlowProvider,
   useEdgesState,
   useNodesState,
+  type Edge,
+  type Node,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { HelpGuideOverlay } from "@/components/help/HelpGuideOverlay";
 import { CsvImportButton } from "@/components/import/CsvImportButton";
+import { ParseInspectOverlay } from "@/components/import/ParseInspectOverlay";
 import { MapEmbedButton } from "@/components/maps/MapEmbedButton";
 import { CalloutsToolbarControl } from "@/components/toolbar/CalloutsToolbarControl";
 import {
@@ -35,12 +39,32 @@ import {
   CALLOUT_AUTO_ZOOM_DEFAULT,
   CALLOUT_SCALE_DEFAULT,
 } from "@/components/toolbar/calloutScale";
+import { edgeTypes } from "@/features/canvas/edgeTypes";
+import {
+  GridDebugOverlay,
+  readGridDebugEnabled,
+  toggleGridDebugStorage,
+} from "@/features/canvas/GridDebugOverlay";
+import { nodeTypes } from "@/features/canvas/nodeTypes";
+import type { ConnectionGraph } from "@/features/diagram/types";
+import { GRID_PITCH } from "@/features/grid";
+import type { LaneBook } from "@/features/grid";
+import type { HorizontalZoneLayout } from "@/features/grid/zones";
+import type { QuadZoneLayout } from "@/features/grid/quadZones";
+import type { InspectReport } from "@/features/import/inspectBentleyCsv";
+import { runImport } from "@/features/import/runImport";
 
 function WorkflowCanvasInner() {
-  const hasDiagram = false;
-
-  const [nodes, , onNodesChange] = useNodesState([]);
-  const [edges, , onEdgesChange] = useEdgesState([]);
+  const [hasDiagram, setHasDiagram] = useState(false);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const [horizontalZone, setHorizontalZone] = useState<HorizontalZoneLayout | null>(null);
+  const [quadZone, setQuadZone] = useState<QuadZoneLayout | null>(null);
+  const [laneBook, setLaneBook] = useState<LaneBook | null>(null);
+  const [gridDebug, setGridDebug] = useState(() => readGridDebugEnabled());
+  const [inspectReport, setInspectReport] = useState<InspectReport | null>(null);
+  const [importError, setImportError] = useState<string | undefined>();
+  const [connectionGraph, setConnectionGraph] = useState<ConnectionGraph | null>(null);
 
   const [collapseFullButtSplices, setCollapseFullButtSplices] = useState(true);
   const [calloutsVisible, setCalloutsVisible] = useState(true);
@@ -52,18 +76,71 @@ function WorkflowCanvasInner() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [lastImport, setLastImport] = useState<{ text: string; fileName: string } | null>(null);
 
-  const handleImport = useCallback((_text: string, _fileName: string) => {
-    // Import pipeline removed — rebuild pending.
+  const applyImportResult = useCallback(
+    (result: Awaited<ReturnType<typeof runImport>>) => {
+      setNodes(result.nodes);
+      setEdges(result.edges);
+      setLaneBook(result.laneBook);
+      setInspectReport(result.inspectReport);
+      setImportError(result.error);
+      setConnectionGraph(result.connectionGraph);
+      setHasDiagram(result.nodes.length > 0);
+
+      if (result.zoneMode === "quad" && result.zoneLayout) {
+        setQuadZone(result.zoneLayout as QuadZoneLayout);
+        setHorizontalZone(null);
+      } else if (result.zoneLayout) {
+        setHorizontalZone(result.zoneLayout as HorizontalZoneLayout);
+        setQuadZone(null);
+      }
+    },
+    [setEdges, setNodes],
+  );
+
+  const reloadLayout = useCallback(
+    async (text: string, fileName: string, mode: "horizontal" | "quad") => {
+      const result = await runImport(text, fileName, { layoutMode: mode });
+      applyImportResult(result);
+    },
+    [applyImportResult],
+  );
+
+  const handleImport = useCallback(
+    async (text: string, fileName: string) => {
+      setLastImport({ text, fileName });
+      await reloadLayout(text, fileName, layoutMode);
+    },
+    [layoutMode, reloadLayout],
+  );
+
+  useEffect(() => {
+    if (!lastImport) return;
+    void reloadLayout(lastImport.text, lastImport.fileName, layoutMode);
+  }, [layoutMode, lastImport, reloadLayout]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.shiftKey && event.key.toLowerCase() === "g") {
+        setGridDebug(toggleGridDebugStorage());
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   const noop = useCallback(() => {}, []);
+
+  const hint = hasDiagram
+    ? `${connectionGraph?.spliceName ?? "Diagram"} · ${connectionGraph?.connections.length ?? 0} splices · Shift+G grid debug`
+    : "Import a Bentley CSV or .sdc.json";
 
   return (
     <div className="workflow-canvas">
       <div className="workflow-canvas__toolbar">
         <div className="workflow-canvas__toolbar-left">
-          <CsvImportButton onImport={handleImport} active={hasDiagram} />
+          <CsvImportButton onImport={(text, fileName) => void handleImport(text, fileName)} active={hasDiagram} />
           <div className="workflow-canvas__toolbar-toggles">
             <ToolbarPillToggle
               label="Buffer tubes"
@@ -123,14 +200,15 @@ function WorkflowCanvasInner() {
             <ToolbarActionButton
               label="Reset to auto layout"
               icon={<ResetIcon />}
-              onClick={noop}
+              onClick={() => {
+                if (lastImport) void reloadLayout(lastImport.text, lastImport.fileName, layoutMode);
+              }}
             />
           ) : null}
         </div>
         <div className="workflow-canvas__toolbar-center">
-          <span className="workflow-canvas__hint">
-            Import a CSV splice report to begin
-          </span>
+          <span className="workflow-canvas__hint">{hint}</span>
+          {importError ? <span className="workflow-canvas__hint workflow-canvas__hint--error">{importError}</span> : null}
         </div>
         <div className="workflow-canvas__toolbar-export">
           <MapEmbedButton disabled={!hasDiagram} icon={<MapIcon />} />
@@ -145,7 +223,7 @@ function WorkflowCanvasInner() {
             label="Open connection inspector"
             icon={<InspectIcon />}
             pressed={inspectorOpen}
-            disabled={!hasDiagram}
+            disabled={!hasDiagram && !inspectReport}
             onClick={() => setInspectorOpen(true)}
           />
           <ToolbarActionButton
@@ -173,6 +251,8 @@ function WorkflowCanvasInner() {
           <ReactFlow
             nodes={nodes}
             edges={edges}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             minZoom={0.05}
@@ -181,12 +261,32 @@ function WorkflowCanvasInner() {
             elementsSelectable
             proOptions={{ hideAttribution: true }}
           >
-            <Background gap={16} />
+            <Background variant={BackgroundVariant.Dots} gap={GRID_PITCH} size={1.5} />
             <Controls />
+            {horizontalZone ? (
+              <GridDebugOverlay
+                zoneLayout={horizontalZone}
+                laneBook={laneBook}
+                enabled={gridDebug}
+              />
+            ) : null}
+            {quadZone ? (
+              <GridDebugOverlay
+                quadZoneLayout={quadZone}
+                laneBook={laneBook}
+                enabled={gridDebug}
+              />
+            ) : null}
           </ReactFlow>
         </div>
       </div>
       <HelpGuideOverlay open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <ParseInspectOverlay
+        open={inspectorOpen}
+        report={inspectReport}
+        error={importError}
+        onClose={() => setInspectorOpen(false)}
+      />
     </div>
   );
 }

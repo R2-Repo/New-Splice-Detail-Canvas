@@ -4,21 +4,25 @@
 
 ## Phase
 
-**Empty shell — rebuild from scratch.**
+**Import module + automatic layout shipped.** CSV parser, ELK layout (horizontal + quad), grid routing, canvas integration.
 
-Neumorphic UI + toolbar + empty React Flow canvas are in place. All parsers, rules, routing, and manual-adjust code removed.
-
-## Baseline (2026-06-15)
+## Baseline (2026-06-16)
 
 | Item | Status |
 |------|--------|
 | `npm run verify` | check + test:ci + build green |
-| `hasDiagram` | always `false` until import rebuilt |
-| Import button | UI only — `handleImport` is a no-op |
+| `src/features/import/` | Bentley CSV parser, `.sdc.json`, `runImport()` |
+| `src/features/diagram/` | ConnectionGraph, strand groups, React Flow builder |
+| `src/features/layout/` | ELK (`elkjs`), horizontal + quad placement |
+| `src/features/routing/` | LaneBook group routing, quad legs |
+| Canvas | Import → full diagram; layout mode toggle re-runs pipeline |
+| Inspect | Parse report overlay on toolbar inspect button |
 
 ## In scope NOW
 
-- Rebuild subsystems in user-directed order (see `REBUILD.md`)
+- User-defined layout/routing rule modules (`RULES_MODULAR.md`)
+- Layout quality tuning against reference PNGs
+- Export `.sdc.json` button (import path done)
 
 ## Out of scope
 
@@ -28,5 +32,7 @@ Neumorphic UI + toolbar + empty React Flow canvas are in place. All parsers, rul
 
 1. [`REBUILD.md`](./REBUILD.md)
 2. [`SCOPE.md`](./SCOPE.md)
-3. [`HANDOFF.md`](./HANDOFF.md)
-4. [`ARCHITECTURE.md`](./ARCHITECTURE.md)
+3. [`IMPORT.md`](./IMPORT.md)
+4. [`GRID.md`](./GRID.md)
+5. [`SDC_JSON.md`](./SDC_JSON.md)
+6. [`HANDOFF.md`](./HANDOFF.md)

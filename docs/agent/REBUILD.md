@@ -42,7 +42,7 @@ Archived prior docs: `docs/archive/` — **not active requirements**.
 | 📎 | CSVs/images/routing screenshots = reference only until you cite them |
 | ⏳ | Toolbar + help = UI shell; behavior TBD |
 
-Add your new rules to `docs/agent/` or `.cursor/rules/` when ready.
+**Rules:** modular — one module per rule, not a monolithic doc. See [`RULES_MODULAR.md`](./RULES_MODULAR.md). User will supply modules; add specs to `docs/agent/` and code under `src/features/diagram/rules/` when ready.
 
 ## Rebuild order (suggested — user may override)
 

@@ -1,45 +1,49 @@
 # Architecture
 
-## Layout (rebuild shell)
+## Layout (rebuild)
 
 ```
 src/
   components/
-    layout/          # AppShell
-    toolbar/         # Icons, toggles, segments, callouts control
-    import/          # CsvImportButton (UI only)
-    maps/            # MapEmbedButton (stub)
-    help/            # Help & guide modal
+    import/          # CsvImportButton, ParseInspectOverlay
   features/
-    canvas/
-      WorkflowCanvas.tsx   # Toolbar + empty React Flow
-  styles/
-    neumorphic-tokens.css
-    neumorphic.css
-    global.css
-    splice-diagram.css     # Toolbar + canvas chrome (neumorphic)
-docs/agent/          # REBUILD, SCOPE, CONTEXT, HANDOFF
-docs/reference/      # CSV examples, images (not shipped)
-docs/archive/        # Prior rules, layout docs, refactor plan
+    import/          # CSV + JSON parsers, runImport orchestrator
+    diagram/         # ConnectionGraph, strand groups, buildReactFlowGraph
+    layout/          # ELK, horizontal + quad placement
+    routing/         # LaneBook routing after layout
+    grid/            # Pitch, zones, quad zones, LaneBook, router
+    canvas/          # WorkflowCanvas, node/edge types
+docs/agent/          # REBUILD, IMPORT, GRID, SDC_JSON, …
+docs/reference/      # CSV examples, images
 ```
 
-## Data flow (target — not implemented)
+## Data flow
 
 ```
-Bentley CSV
-  → parse → connection graph
-  → layout → node positions
-  → route → edge paths
-  → React Flow canvas (edit)
-  → export / print
+CSV / .sdc.json
+  → detectImportFormat → parse
+  → buildConnectionGraph
+  → classifyStrandGroups
+  → runLayoutEngine (ELK + horizontal | quad)
+  → routeConnections (LaneBook, grid snap)
+  → buildReactFlowGraph
+  → WorkflowCanvas
 ```
 
-## Conventions
+## Module map
 
-- Functional components; `@/` imports
-- Shared UI in `src/components/`; feature logic in `src/features/`
-- Tests next to source (`*.test.tsx` / `*.test.ts`)
+| Module | Key exports |
+|--------|-------------|
+| `import/` | `runImport`, `parseBentleyCsv`, `inspectBentleyCsv`, `parseSdcJson` |
+| `diagram/` | `buildConnectionGraph`, `classifyStrandGroups`, `buildReactFlowGraph` |
+| `layout/` | `runLayoutEngine`, `assignCableSides`, ELK builders |
+| `routing/` | `routeConnections`, `routeQuadSpliceLeg` |
+| `grid/` | `GRID_PITCH`, zones, `LaneBook`, `routeHorizontalSpliceLeg` |
+
+Rules remain **modular** — see [`RULES_MODULAR.md`](./RULES_MODULAR.md).
 
 ## Quality gates
 
 `npm run check` → `npm run test:ci` → `npm run build`
+
+Import contract tests: `src/features/import/referenceCsvParse.test.ts`

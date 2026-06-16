@@ -216,7 +216,8 @@
   outline-offset: 2px;
 }
 
-/* Canvas background dots on neo base */
+/* Canvas dot grid — aligned to GRID_PITCH (24px) in WorkflowCanvas */
 .react-flow__background pattern circle {
   fill: var(--neo-canvas-dot);
+  r: 1.5;
 }

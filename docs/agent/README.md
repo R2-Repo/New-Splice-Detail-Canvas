@@ -8,9 +8,13 @@
 |------|---------|
 | [`REBUILD.md`](./REBUILD.md) | Shell status, what was kept vs removed |
 | [`SCOPE.md`](./SCOPE.md) | High-level product vision (no implementation rules) |
+| [`RULES_MODULAR.md`](./RULES_MODULAR.md) | Modular rules direction — modules TBD by user |
 | [`CONTEXT.md`](./CONTEXT.md) | Current focus — update each session |
 | [`HANDOFF.md`](./HANDOFF.md) | Last session summary |
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Folder layout |
+| [`IMPORT.md`](./IMPORT.md) | CSV + JSON import pipeline |
+| [`GRID.md`](./GRID.md) | Grid coordinates, zones, lane book |
+| [`SDC_JSON.md`](./SDC_JSON.md) | `.sdc.json` schema v1 |
 
 Also: [`AGENTS.md`](../../AGENTS.md) and [`.cursor/rules/`](../../.cursor/rules/).
 
