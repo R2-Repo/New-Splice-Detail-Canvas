@@ -28,4 +28,4 @@ This repo is an **empty React PWA shell** for rebuilding Splice Detail Canvas.
 
 ## Quality
 
-Before finishing substantive work: `npm run check`, `npm run test:ci`, `npm run build`.
+Before finishing substantive work: `npm run check`, `npm run test:ci`, `npm run build`. When changing import/layout/routing: also `npm run test:rules`.

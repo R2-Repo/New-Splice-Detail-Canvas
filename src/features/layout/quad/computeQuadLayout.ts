@@ -4,6 +4,7 @@ import { defaultQuadZoneLayout } from "@/features/grid/quadZones";
 import type { ConnectionGraph, DiagramSide } from "@/features/diagram/types";
 import type { StrandGroupLayoutInput } from "@/features/diagram/strandGroups";
 import { connectionRowIndex } from "@/features/diagram/strandGroups";
+import type { PlacementPlan } from "@/features/rules/placement/types";
 
 import { assignCableSides, stackOrderForSide } from "../assignCableSides";
 import { applyElkLayout, collectElkNodePositions } from "../elk/applyElkLayout";
@@ -15,8 +16,10 @@ const BASE = 6;
 export async function computeQuadLayout(
   graph: ConnectionGraph,
   strandInput: StrandGroupLayoutInput,
+  placementPlan?: PlacementPlan,
 ): Promise<LayoutResult> {
-  const sideAssignment = assignCableSides(graph, "quad");
+  const sideAssignment =
+    placementPlan?.sideAssignment ?? assignCableSides(graph, "quad");
   const quad = defaultQuadZoneLayout(graph.connections.length);
   const zoneLayout = { mode: "quad" as const, quad };
 
@@ -39,7 +42,9 @@ export async function computeQuadLayout(
   const groupLanes = new Map<string, number>();
 
   for (const side of ["left", "right", "top", "bottom"] as DiagramSide[]) {
-    const stack = stackOrderForSide(graph, side, sideAssignment);
+    const stack =
+      placementPlan?.stackOrder.get(side) ??
+      stackOrderForSide(graph, side, sideAssignment);
     stack.forEach((legId, index) => {
       const pos = quadCablePosition(side, index, quad);
       placements.push({ nodeId: `cable-${legId}`, ...pos });

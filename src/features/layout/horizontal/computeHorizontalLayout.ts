@@ -4,6 +4,7 @@ import { defaultHorizontalZoneLayout } from "@/features/grid/quadZones";
 import type { ConnectionGraph } from "@/features/diagram/types";
 import type { StrandGroupLayoutInput } from "@/features/diagram/strandGroups";
 import { connectionRowIndex } from "@/features/diagram/strandGroups";
+import type { PlacementPlan } from "@/features/rules/placement/types";
 
 import { assignCableSides, stackOrderForSide } from "../assignCableSides";
 import { applyElkLayout, collectElkNodePositions } from "../elk/applyElkLayout";
@@ -17,8 +18,10 @@ const CABLE_COL_RIGHT_OFFSET = 2;
 export async function computeHorizontalLayout(
   graph: ConnectionGraph,
   strandInput: StrandGroupLayoutInput,
+  placementPlan?: PlacementPlan,
 ): Promise<LayoutResult> {
-  const sideAssignment = assignCableSides(graph, "horizontal");
+  const sideAssignment =
+    placementPlan?.sideAssignment ?? assignCableSides(graph, "horizontal");
   const zoneLayout = {
     mode: "horizontal" as const,
     horizontal: defaultHorizontalZoneLayout(graph.connections.length),
@@ -28,8 +31,12 @@ export async function computeHorizontalLayout(
     leg.side = sideAssignment.get(leg.id);
   }
 
-  const leftStack = stackOrderForSide(graph, "left", sideAssignment);
-  const rightStack = stackOrderForSide(graph, "right", sideAssignment);
+  const leftStack =
+    placementPlan?.stackOrder.get("left") ??
+    stackOrderForSide(graph, "left", sideAssignment);
+  const rightStack =
+    placementPlan?.stackOrder.get("right") ??
+    stackOrderForSide(graph, "right", sideAssignment);
 
   const elkGraph = buildElkGraph({
     graph,

@@ -45,9 +45,16 @@ Archived (prior app): `docs/archive/` — old rules, layout docs, refactor plan.
 npm run dev      # local dev server
 npm run check    # typecheck
 npm run test:ci  # unit tests
+npm run test:rules          # all rule module + system tests
+npm run test:rule -- <id>   # single rule module
+npm run test:rules:reference  # reference CSV rule tests
 npm run build    # production build
 npm run verify   # check + test:ci + build
 ```
+
+## Rules
+
+Modular layout/routing rules live in `src/features/rules/`. See [`docs/agent/RULES_MODULAR.md`](docs/agent/RULES_MODULAR.md). When changing import, layout, or routing, run `test:rule` / `test:rules` before `verify`.
 
 ## Response style
 

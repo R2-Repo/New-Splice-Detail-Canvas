@@ -92,19 +92,24 @@ function parseToSide(right: string): Omit<CsvEndpoint, "csvColumn"> | null {
   };
 }
 
+function toCsvEndpoint(
+  raw: Omit<CsvEndpoint, "csvColumn">,
+  csvColumn: "from" | "to",
+): CsvEndpoint {
+  const { device: _device, ...rest } = raw;
+  void _device;
+  return { ...rest, csvColumn };
+}
+
 export function normalizeEndpoints(
   fromRaw: Omit<CsvEndpoint, "csvColumn">,
   toRaw: Omit<CsvEndpoint, "csvColumn">,
 ): { endpointA: CsvEndpoint; endpointB: CsvEndpoint } {
-  const endpointA: CsvEndpoint = { ...fromRaw, csvColumn: "from" };
-  let endpointB: CsvEndpoint = { ...toRaw, csvColumn: "to" };
+  let endpointB = toCsvEndpoint(toRaw, "to");
+  const endpointA = toCsvEndpoint(fromRaw, "from");
 
   if (!endpointB.fiberNumber && endpointA.fiberNumber) {
     endpointB = { ...endpointB, fiberNumber: endpointA.fiberNumber };
-  }
-
-  if (!endpointB.device && endpointA.device) {
-    endpointB = { ...endpointB, device: endpointA.device };
   }
 
   if ("osTag" in toRaw && toRaw.osTag) {

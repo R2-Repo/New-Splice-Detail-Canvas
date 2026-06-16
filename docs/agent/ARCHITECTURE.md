@@ -11,6 +11,7 @@ src/
     diagram/         # ConnectionGraph, strand groups, buildReactFlowGraph
     layout/          # ELK, horizontal + quad placement
     routing/         # LaneBook routing after layout
+    rules/           # Modular rule modules + system suite (see RULES_MODULAR.md)
     grid/            # Pitch, zones, quad zones, LaneBook, router
     canvas/          # WorkflowCanvas, node/edge types
 docs/agent/          # REBUILD, IMPORT, GRID, SDC_JSON, …
@@ -38,6 +39,7 @@ CSV / .sdc.json
 | `diagram/` | `buildConnectionGraph`, `classifyStrandGroups`, `buildReactFlowGraph` |
 | `layout/` | `runLayoutEngine`, `assignCableSides`, ELK builders |
 | `routing/` | `routeConnections`, `routeQuadSpliceLeg` |
+| `rules/` | `runRules`, `buildSnapshotFromExample`, `RULE_REGISTRY` |
 | `grid/` | `GRID_PITCH`, zones, `LaneBook`, `routeHorizontalSpliceLeg` |
 
 Rules remain **modular** — see [`RULES_MODULAR.md`](./RULES_MODULAR.md).
@@ -47,3 +49,5 @@ Rules remain **modular** — see [`RULES_MODULAR.md`](./RULES_MODULAR.md).
 `npm run check` → `npm run test:ci` → `npm run build`
 
 Import contract tests: `src/features/import/referenceCsvParse.test.ts`
+
+Rule tests: `npm run test:rules` (see [`RULES_MODULAR.md`](./RULES_MODULAR.md))

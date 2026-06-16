@@ -7,7 +7,10 @@ import { LaneBook } from "@/features/grid/laneBook";
 import type { QuadZoneLayout } from "@/features/grid/quadZones";
 import type { HorizontalZoneLayout } from "@/features/grid/zones";
 import { runLayoutEngine } from "@/features/layout/runLayoutEngine";
-import { routeConnections } from "@/features/routing/routeConnections";
+import type { LayoutResult } from "@/features/layout/types";
+import { pickBestLayout } from "@/features/rules/placement/pickBestLayout";
+import { routeConnections, type RoutingResult } from "@/features/routing/routeConnections";
+import type { RouteQualityBreakdown } from "@/features/routing/scoreRouting";
 
 import { detectImportFormat } from "./detectImportFormat";
 import { enrichParsedCsv, parseBentleyCsv } from "./parseBentleyCsv";
@@ -23,12 +26,39 @@ export type ImportResult = {
   connectionGraph: ConnectionGraph;
   inspectReport: InspectReport | null;
   layoutMode: LayoutMode;
+  layout: LayoutResult;
+  routing: RoutingResult;
+  placementPlanId?: string;
+  routeScore?: RouteQualityBreakdown;
   error?: string;
 };
 
 export type RunImportOptions = {
   layoutMode?: LayoutMode;
+  /** When true (default), try placement candidates and pick lowest route score. */
+  optimizeLayout?: boolean;
 };
+
+const EMPTY_LAYOUT: LayoutResult = {
+  layoutMode: "horizontal",
+  zoneLayout: {
+    mode: "horizontal",
+    horizontal: {
+      leftEndCol: 0,
+      centerStartCol: 0,
+      centerEndCol: 0,
+      rightStartCol: 0,
+    },
+  },
+  placements: [],
+  splicePoints: [],
+  groupLanes: new Map(),
+  connectionRows: new Map(),
+};
+
+function emptyRouting(): RoutingResult {
+  return { laneBook: new LaneBook(), routes: [] };
+}
 
 const EMPTY_GRAPH: ConnectionGraph = {
   spliceName: "",
@@ -74,12 +104,20 @@ async function runCsvImport(
       connectionGraph: EMPTY_GRAPH,
       inspectReport,
       layoutMode: options.layoutMode ?? "horizontal",
+      layout: EMPTY_LAYOUT,
+      routing: emptyRouting(),
       error: `CSV parse not ready: gap=${parsed.parseGap}, failures=${parsed.failures.length}`,
     };
   }
 
   const connectionGraph = buildConnectionGraph(parsed);
-  return finalizeImport(connectionGraph, inspectReport, options.layoutMode ?? "horizontal", undefined);
+  return finalizeImport(
+    connectionGraph,
+    inspectReport,
+    options.layoutMode ?? "horizontal",
+    undefined,
+    options.optimizeLayout !== false,
+  );
 }
 
 async function runJsonImport(text: string, options: RunImportOptions): Promise<ImportResult> {
@@ -101,7 +139,13 @@ async function runJsonImport(text: string, options: RunImportOptions): Promise<I
   }
 
   const layoutMode = options.layoutMode ?? doc.layoutMode ?? "horizontal";
-  return finalizeImport(connectionGraph, null, layoutMode, doc.nodePositions);
+  return finalizeImport(
+    connectionGraph,
+    null,
+    layoutMode,
+    doc.nodePositions,
+    options.optimizeLayout !== false && !doc.nodePositions,
+  );
 }
 
 async function finalizeImport(
@@ -109,11 +153,23 @@ async function finalizeImport(
   inspectReport: InspectReport | null,
   layoutMode: LayoutMode,
   nodePositions?: Record<string, { x: number; y: number }>,
+  optimizeLayout = true,
 ): Promise<ImportResult> {
-  const layout = await runLayoutEngine(connectionGraph, {
-    layoutMode,
-    overrides: { nodePositions },
-  });
+  let layout: LayoutResult;
+  let routing: RoutingResult;
+  let placementPlanId: string | undefined;
+  let routeScore: RouteQualityBreakdown | undefined;
+
+  if (optimizeLayout && !nodePositions) {
+    const optimized = await pickBestLayout(connectionGraph, layoutMode);
+    layout = optimized.layout;
+    routing = optimized.routing;
+    placementPlanId = optimized.plan.id;
+    routeScore = optimized.breakdown;
+  } else {
+    layout = await runLayoutEngine(connectionGraph, { layoutMode });
+    routing = routeConnections(connectionGraph, layout);
+  }
 
   if (nodePositions) {
     for (const [nodeId, pos] of Object.entries(nodePositions)) {
@@ -123,9 +179,9 @@ async function finalizeImport(
         existing.row = Math.round(pos.y / 24);
       }
     }
+    routing = routeConnections(connectionGraph, layout);
   }
 
-  const routing = routeConnections(connectionGraph, layout);
   const rf = buildReactFlowGraph(connectionGraph, layout, routing);
 
   return {
@@ -137,6 +193,10 @@ async function finalizeImport(
     connectionGraph,
     inspectReport,
     layoutMode,
+    layout,
+    routing,
+    placementPlanId,
+    routeScore,
   };
 }
 
@@ -150,6 +210,8 @@ function emptyErrorResult(error: string): ImportResult {
     connectionGraph: EMPTY_GRAPH,
     inspectReport: null,
     layoutMode: "horizontal",
+    layout: EMPTY_LAYOUT,
+    routing: emptyRouting(),
     error,
   };
 }

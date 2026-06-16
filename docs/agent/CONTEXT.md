@@ -4,25 +4,25 @@
 
 ## Phase
 
-**Import module + automatic layout shipped.** CSV parser, ELK layout (horizontal + quad), grid routing, canvas integration.
+**SP-3254.5 layout oracles + route scorer.** PDF variants documented; placement optimizer picks lowest score.
 
-## Baseline (2026-06-16)
+## Baseline (2026-06-15)
 
 | Item | Status |
 |------|--------|
 | `npm run verify` | check + test:ci + build green |
-| `src/features/import/` | Bentley CSV parser, `.sdc.json`, `runImport()` |
+| `src/features/import/` | Bentley CSV parser, `.sdc.json`, `runImport()` with `optimizeLayout` |
 | `src/features/diagram/` | ConnectionGraph, strand groups, React Flow builder |
-| `src/features/layout/` | ELK (`elkjs`), horizontal + quad placement |
-| `src/features/routing/` | LaneBook group routing, quad legs |
-| Canvas | Import → full diagram; layout mode toggle re-runs pipeline |
-| Inspect | Parse report overlay on toolbar inspect button |
+| `src/features/layout/` | ELK, horizontal + quad; accepts `PlacementPlan` |
+| `src/features/routing/` | LaneBook routing, `scoreRouting()` |
+| `src/features/rules/placement/` | Candidate generation, `pickBestLayout()` |
+| Teaching CSV | [`CSV_SP-3254.5.md`](./CSV_SP-3254.5.md) — PDF oracles, auto scores, device ignored |
+| Placement scaffold | [`rules/sp3254-placement.md`](./rules/sp3254-placement.md) — awaiting user refinement |
 
 ## In scope NOW
 
-- User-defined layout/routing rule modules (`RULES_MODULAR.md`)
-- Layout quality tuning against reference PNGs
-- Export `.sdc.json` button (import path done)
+- **Refine placement rules** from PDF oracle review (side/stack order)
+- Quad routing fix so quad score comparison is meaningful
 
 ## Out of scope
 
@@ -32,7 +32,8 @@
 
 1. [`REBUILD.md`](./REBUILD.md)
 2. [`SCOPE.md`](./SCOPE.md)
-3. [`IMPORT.md`](./IMPORT.md)
-4. [`GRID.md`](./GRID.md)
-5. [`SDC_JSON.md`](./SDC_JSON.md)
-6. [`HANDOFF.md`](./HANDOFF.md)
+3. [`RULES_MODULAR.md`](./RULES_MODULAR.md)
+4. [`IMPORT.md`](./IMPORT.md)
+5. [`GRID.md`](./GRID.md)
+6. [`SDC_JSON.md`](./SDC_JSON.md)
+7. [`HANDOFF.md`](./HANDOFF.md)

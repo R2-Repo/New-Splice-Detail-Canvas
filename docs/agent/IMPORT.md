@@ -17,8 +17,9 @@
 
 - One `<->` row = one splice pair
 - Trailing/leading commas around `<->` are stripped
-- Blank To fiber # → copy From; empty To device → copy From device
+- Blank To fiber # → copy From
 - To-side fixed tail: `fiber#`, tube, fiber color, device [, OS…]
+- **Terminating Device:** parsed structurally (field before cable on From; device slot on To) — **not stored or used** in graph/layout
 - Right `---` is hints only — never paired
 - Parse gap must be 0 before layout (`inspectBentleyCsv`)
 
@@ -28,11 +29,13 @@
 CSV / JSON
   → parse → ConnectionGraph (buildConnectionGraph)
   → classifyStrandGroups
-  → runLayoutEngine (ELK + horizontal or quad)
+  → pickBestLayout (placement candidates + route score) OR runLayoutEngine
   → routeConnections (LaneBook)
   → buildReactFlowGraph
   → canvas
 ```
+
+`optimizeLayout` defaults to **true** in `runImport()` — tries side/stack candidates and picks lowest route score.
 
 ## Modules
 
@@ -41,7 +44,8 @@ CSV / JSON
 | `src/features/import/` | Parsers, inspect report, orchestrator |
 | `src/features/diagram/` | ConnectionGraph, TIA order, strand groups, RF builder |
 | `src/features/layout/` | Cable sides, ELK graph, horizontal + quad layout |
-| `src/features/routing/` | Grid-snapped orthogonal routing |
+| `src/features/routing/` | LaneBook routing, route quality scorer |
+| `src/features/rules/placement/` | Placement candidates, pickBestLayout |
 | `src/features/grid/` | Pitch, zones, LaneBook |
 
 ## Inspect UI

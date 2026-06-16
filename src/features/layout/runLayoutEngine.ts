@@ -9,11 +9,11 @@ export async function runLayoutEngine(
   graph: ConnectionGraph,
   options: LayoutOptions,
 ): Promise<LayoutResult> {
-  const strandInput = classifyStrandGroups(graph);
+  const strandInput = options.strandInput ?? classifyStrandGroups(graph);
 
   if (options.layoutMode === "quad") {
-    return computeQuadLayout(graph, strandInput);
+    return computeQuadLayout(graph, strandInput, options.placementPlan);
   }
 
-  return computeHorizontalLayout(graph, strandInput);
+  return computeHorizontalLayout(graph, strandInput, options.placementPlan);
 }

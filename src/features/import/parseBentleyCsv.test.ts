@@ -36,7 +36,7 @@ describe("parseBentleyRow", () => {
     expect(parsed!.endpointB.osTag).toBe("CH 2305");
   });
 
-  it("handles cable names with commas via tail-fixed parse", () => {
+  it("copies blank To fiber number from From without persisting device", () => {
     const from = {
       device: "DEV",
       cableName: "288-SMF DIST I-215: COMPLEX - STATE OFFICE",
@@ -51,8 +51,9 @@ describe("parseBentleyRow", () => {
       tubeColor: "BL",
       fiberColor: "BL",
     };
-    const { endpointB } = normalizeEndpoints(from, to);
+    const { endpointA, endpointB } = normalizeEndpoints(from, to);
     expect(endpointB.fiberNumber).toBe(5);
-    expect(endpointB.device).toBe("DEV");
+    expect(endpointA.device).toBeUndefined();
+    expect(endpointB.device).toBeUndefined();
   });
 });

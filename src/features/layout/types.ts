@@ -3,6 +3,8 @@ import type { GridNodePlacement } from "@/features/grid/placement";
 import type { HorizontalZoneLayout } from "@/features/grid/zones";
 
 import type { LayoutMode } from "@/features/diagram/types";
+import type { StrandGroupLayoutInput } from "@/features/diagram/strandGroups";
+import type { PlacementPlan } from "@/features/rules/placement/types";
 
 export type QuadZoneLayout = {
   topEndRow: number;
@@ -35,6 +37,8 @@ export type LayoutResult = {
 
 export type LayoutOptions = {
   layoutMode: LayoutMode;
+  placementPlan?: PlacementPlan;
+  strandInput?: StrandGroupLayoutInput;
   overrides?: {
     nodePositions?: Record<string, { x: number; y: number }>;
   };

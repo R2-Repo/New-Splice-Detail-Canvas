@@ -3,7 +3,8 @@ import type { ParseReasonCode } from "./parseReasons";
 export type CsvColumn = "from" | "to";
 
 export type CsvEndpoint = {
-  device: string;
+  /** Parsed for row structure only — not used in graph, layout, or rules. */
+  device?: string;
   cableName: string;
   fiberNumber: number;
   tubeColor: string;

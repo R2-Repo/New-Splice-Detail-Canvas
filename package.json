@@ -11,6 +11,9 @@
     "lint": "eslint .",
     "test": "vitest",
     "test:ci": "vitest run",
+    "test:rules": "vitest run src/features/rules",
+    "test:rule": "vitest run src/features/rules",
+    "test:rules:reference": "vitest run src/features/rules --grep reference",
     "verify": "npm run check && npm run test:ci && npm run build"
   },
   "dependencies": {
