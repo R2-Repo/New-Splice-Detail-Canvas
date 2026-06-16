@@ -1,6 +1,8 @@
-# Splice Detail Canvas
+# Splice Detail Canvas (rebuild fork)
 
 Modern **frontend-only** React PWA: a node/workflow canvas app built for agentic development in Cursor.
+
+**Rebuild workspace** — this copy is set up for a major refactor in a new direction. Cursor agents: start at [`docs/agent/REBUILD.md`](./docs/agent/REBUILD.md).
 
 ## Quick start
 
@@ -23,11 +25,13 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 | `npm run check` | TypeScript check |
 | `npm run test` | Vitest (watch) |
 | `npm run test:ci` | Vitest (CI) |
+| `npm run verify` | check + test:ci + build |
 | `npm run lint` | ESLint |
 
 ## For Cursor agents
 
-See **[AGENTS.md](./AGENTS.md)** — workflow, constraints, and handoff files in `docs/agent/`.
+1. **[`docs/agent/REBUILD.md`](./docs/agent/REBUILD.md)** — rebuild phase entry point
+2. **[AGENTS.md](./AGENTS.md)** — workflow, constraints, handoff files
 
 ## Stack
 
@@ -39,10 +43,11 @@ See **[AGENTS.md](./AGENTS.md)** — workflow, constraints, and handoff files in
 ## Project layout
 
 ```
-src/features/canvas/   # Workflow canvas (React Flow)
-src/components/        # Shared UI
-docs/agent/            # SCOPE, CONTEXT, HANDOFF for agents
-docs/reference/        # Your examples, images, resources
+src/components/        # Toolbar, help, import button, app shell
+src/features/canvas/   # WorkflowCanvas (empty React Flow)
+docs/agent/            # REBUILD, SCOPE, CONTEXT, HANDOFF
+docs/reference/        # CSV examples, images
+docs/archive/          # Prior app rules and engines (reference only)
 .cursor/rules/         # Cursor rules
 ```
 

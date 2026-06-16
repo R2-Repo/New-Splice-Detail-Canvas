@@ -1,0 +1,31 @@
+---
+description: Rebuild phase — empty PWA shell
+alwaysApply: true
+---
+
+# Rebuild shell (active)
+
+This repo is an **empty React PWA shell** for rebuilding Splice Detail Canvas.
+
+## Kept (do not change without user approval)
+
+- Neumorphic UI theme (`src/styles/neumorphic*.css`, chrome in `splice-diagram.css`)
+- Toolbar layout, buttons, and icons (behavior remapped later)
+- React Flow empty canvas (`WorkflowCanvas.tsx`)
+
+## Removed (rebuild from scratch)
+
+- CSV parser / import pipeline
+- Layout rules and routing engines
+- Manual adjustment engine
+- Diagram domain model in `src/features/diagram/`
+
+## Before coding
+
+1. Read `docs/agent/REBUILD.md` and `docs/agent/CONTEXT.md`.
+2. No new npm packages without user approval.
+3. Update `CONTEXT.md` + `HANDOFF.md` at end of session.
+
+## Quality
+
+Before finishing substantive work: `npm run check`, `npm run test:ci`, `npm run build`.

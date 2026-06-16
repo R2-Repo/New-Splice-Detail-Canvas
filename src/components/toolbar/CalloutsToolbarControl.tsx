@@ -6,7 +6,7 @@ import {
   CALLOUT_SCALE_MIN,
   calloutScalePercent,
   clampCalloutScale,
-} from "@/features/canvas/callouts/calloutScale";
+} from "@/components/toolbar/calloutScale";
 
 type CalloutsToolbarControlProps = {
   disabled?: boolean;

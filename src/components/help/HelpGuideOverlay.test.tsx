@@ -15,11 +15,9 @@ describe("HelpGuideOverlay", () => {
     render(<HelpGuideOverlay open onClose={() => {}} />);
 
     expect(screen.getByRole("dialog", { name: "Help and guide" })).toBeInTheDocument();
-    expect(screen.getByText("Get started")).toBeInTheDocument();
-    expect(screen.getByText("Hold line → protect")).toBeInTheDocument();
-    expect(screen.getByText("Drag cable ↔")).toBeInTheDocument();
-    expect(screen.getByText("Tube tip ↕")).toBeInTheDocument();
-    expect(screen.getByText("Report")).toBeInTheDocument();
+    expect(screen.getByText("Rebuild in progress")).toBeInTheDocument();
+    expect(screen.getByText("Toolbar")).toBeInTheDocument();
+    expect(screen.getByText("Import")).toBeInTheDocument();
   });
 
   it("calls onClose from Close button and Escape", () => {

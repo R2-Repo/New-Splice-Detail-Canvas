@@ -1,8 +1,8 @@
 # Reference CSVs
 
-## User QA and agent testing (canonical)
+Sample Bentley splice reports for future import/parser work and manual QA.
 
-Import these via the app **Import** button (`npm run dev` → `http://localhost:5173/`):
+## Canonical test files
 
 | File | Splice |
 |------|--------|
@@ -10,12 +10,8 @@ Import these via the app **Import** button (`npm run dev` → `http://localhost:
 | `Left-SPI-215_I-80.csv` | SPI-215 & I-80 |
 | `Left-SP-3254.5.csv` | SP-3254.5 |
 
-All live in this folder: `docs/reference/examples/`.
+Import via the app **Import file** button once the parser is rebuilt (`npm run dev` or `start-dev.bat`).
 
-Code helper: `src/testHelpers/leftCsvPaths.ts` (`readLeftCsv`, `LEFT_REFERENCE_CSVS`).
+## Other examples
 
-## Automated layout contract only
-
-`npm run test:layout` still uses legacy `CSV Splice Detail Example #1–#3.csv` files (under `old csv examples/`) for rule coverage. **Do not use these for manual QA** unless debugging a specific layout rule.
-
-Helper: `src/testHelpers/layoutContractCsvPaths.ts`.
+`old csv examples/` — additional Bentley exports. Reference data only; no automated layout contract in the rebuild shell.
