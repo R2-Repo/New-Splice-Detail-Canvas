@@ -3,9 +3,9 @@ description: Core project standards and agent workflow
 alwaysApply: true
 ---
 
-# Splice Detail Canvas (rebuild shell)
+# Splice Detail Canvas (rebuild phase)
 
-Read `docs/agent/REBUILD.md`, then `AGENTS.md`, `docs/agent/SCOPE.md`, `CONTEXT.md`, and `HANDOFF.md` before coding.
+Read `docs/agent/REBUILD.md`, then `AGENTS.md`, `docs/agent/rules/README.md` (SDC rule pack — source of truth), `docs/agent/SCOPE.md`, `CONTEXT.md`, and `HANDOFF.md` before coding.
 
 ## Stack
 

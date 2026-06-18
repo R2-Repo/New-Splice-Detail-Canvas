@@ -14,7 +14,8 @@ src/
     rules/           # Modular rule modules + system suite (see RULES_MODULAR.md)
     grid/            # Pitch, zones, quad zones, LaneBook, router
     canvas/          # WorkflowCanvas, node/edge types
-docs/agent/          # REBUILD, IMPORT, GRID, SDC_JSON, …
+docs/agent/          # REBUILD, SCOPE, IMPORT, GRID, SDC_JSON, …
+docs/agent/rules/    # SDC rule pack (canonical specs)
 docs/reference/      # CSV examples, images
 ```
 
@@ -42,7 +43,7 @@ CSV / .sdc.json
 | `rules/` | `runRules`, `buildSnapshotFromExample`, `RULE_REGISTRY` |
 | `grid/` | `GRID_PITCH`, zones, `LaneBook`, `routeHorizontalSpliceLeg` |
 
-Rules remain **modular** — see [`RULES_MODULAR.md`](./RULES_MODULAR.md).
+Rules remain **modular** — see [`RULES_MODULAR.md`](./RULES_MODULAR.md). Canonical specs: [`rules/`](./rules/).
 
 ## Quality gates
 

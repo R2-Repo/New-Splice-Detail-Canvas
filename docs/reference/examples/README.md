@@ -2,25 +2,25 @@
 
 Sample Bentley splice reports for import/parser contract tests and manual QA.
 
-## Primary teaching CSV
+## Primary example CSV
 
-| File | Splice | Left pairs | Doc |
-|------|--------|------------|-----|
-| **`Left-SP-3254.5.csv`** | SP-3254.5 | 20 | [`docs/agent/CSV_SP-3254.5.md`](../../agent/CSV_SP-3254.5.md) |
+| File | Splice | Left pairs | Rule |
+|------|--------|------------|------|
+| **`Left-SP-3254.5.csv`** | SP-3254.5 | 20 | [`SDC-IMPORT-001`](../../agent/rules/SDC-IMPORT-001.md) |
 
-Use this file first for format walkthroughs and layout planning (20 rows, 4 cable types, empty Right section).
+Use this file first for Bentley format walkthroughs (20 rows, 4 cable types, empty Right section). The import format and Bentley appendix are defined in [`SDC-IMPORT-001`](../../agent/rules/SDC-IMPORT-001.md).
 
 ## Layout oracles (SP-3254.5)
 
-Three manual horizontal layouts from the prior app — same CSV, different cable side/stack choices. Use for visual QA and route-score comparison (not pixel tests).
+Three manual horizontal layouts from the prior app — same CSV, different cable side/stack choices. Visual reference only for the layout/routing rebuild (not pixel tests).
 
 | Variant | File | Mode |
 |---------|------|------|
-| 1 | `Left-SP-3254.5 (From old App 1).pdf` | Horizontal (left/right) |
-| 2 | `Left-SP-3254.5 (From old App 2).pdf` | Horizontal (left/right) |
-| 3 | `Left-SP-3254.5 (From old App 3).pdf` | Horizontal (left/right) |
+| 1 | `Left-SP-3254.5 (From old App 1).pdf` | Two-sided (left/right) |
+| 2 | `Left-SP-3254.5 (From old App 2).pdf` | Two-sided (left/right) |
+| 3 | `Left-SP-3254.5 (From old App 3).pdf` | Two-sided (left/right) |
 
-**Optimization goal:** minimize bends, crossovers, and loop-backs. Quad layout is experimental but may beat any horizontal variant — see [`CSV_SP-3254.5.md`](../../agent/CSV_SP-3254.5.md).
+**Optimization goal:** see [`SDC-SCORE-001`](../../agent/rules/SDC-SCORE-001.md) (minimize crossings, collisions, bends; prefer readable spacing and nesting).
 
 ## Canonical test files
 

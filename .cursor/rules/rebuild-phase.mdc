@@ -3,26 +3,26 @@ description: Rebuild phase — empty PWA shell
 alwaysApply: true
 ---
 
-# Rebuild shell (active)
+# Rebuild phase (active)
 
-This repo is an **empty React PWA shell** for rebuilding Splice Detail Canvas.
+Rebuilding Splice Detail Canvas against the **SDC rule pack** (`docs/agent/rules/`, version `SDC-RULES-2026-06`). The rule pack is the source of truth for behavior. Import, layout, routing, and grid code exist from the prior phase and are being rebuilt to match the rules.
 
 ## Kept (do not change without user approval)
 
 - Neumorphic UI theme (`src/styles/neumorphic*.css`, chrome in `splice-diagram.css`)
 - Toolbar layout, buttons, and icons (behavior remapped later)
-- React Flow empty canvas (`WorkflowCanvas.tsx`)
+- React Flow canvas (`WorkflowCanvas.tsx`)
 
-## Removed (rebuild from scratch)
+## Rebuild to match SDC rules (big-ticket)
 
-- CSV parser / import pipeline
-- Layout rules and routing engines
-- Manual adjustment engine
-- Diagram domain model in `src/features/diagram/`
+- CSV import / normalization -> `SDC-IMPORT-001`
+- Grid system -> `SDC-GRID-001`
+- Routing + scoring -> `SDC-ROUTE-001..004`, `SDC-SCORE-001`
+- Layout / side assignment -> `SDC-LAYOUT-001..003`, `SDC-LABEL-001`
 
 ## Before coding
 
-1. Read `docs/agent/REBUILD.md` and `docs/agent/CONTEXT.md`.
+1. Read `docs/agent/REBUILD.md`, `docs/agent/rules/README.md`, and `docs/agent/CONTEXT.md`.
 2. No new npm packages without user approval.
 3. Update `CONTEXT.md` + `HANDOFF.md` at end of session.
 

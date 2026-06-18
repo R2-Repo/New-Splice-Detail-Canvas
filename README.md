@@ -46,8 +46,8 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 src/components/        # Toolbar, help, import button, app shell
 src/features/canvas/   # WorkflowCanvas (empty React Flow)
 docs/agent/            # REBUILD, SCOPE, CONTEXT, HANDOFF
+docs/agent/rules/      # SDC rule pack (canonical behavior specs)
 docs/reference/        # CSV examples, images
-docs/archive/          # Prior app rules and engines (reference only)
 .cursor/rules/         # Cursor rules
 ```
 

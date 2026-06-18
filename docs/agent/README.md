@@ -6,26 +6,27 @@
 
 | File | Purpose |
 |------|---------|
-| [`REBUILD.md`](./REBUILD.md) | Shell status, what was kept vs removed |
+| [`REBUILD.md`](./REBUILD.md) | Shell status, what was kept vs rebuilt |
 | [`SCOPE.md`](./SCOPE.md) | High-level product vision (no implementation rules) |
-| [`RULES_MODULAR.md`](./RULES_MODULAR.md) | Modular rules framework + per-rule workflow |
-| [`rules/README.md`](./rules/README.md) | Index of active rule specs |
+| [`rules/README.md`](./rules/README.md) | **SDC rule pack index** — canonical specs, processing order, conflict priority |
+| [`RULES_MODULAR.md`](./RULES_MODULAR.md) | How rules become code modules + per-rule workflow |
 | [`CONTEXT.md`](./CONTEXT.md) | Current focus — update each session |
 | [`HANDOFF.md`](./HANDOFF.md) | Last session summary |
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Folder layout |
-| [`IMPORT.md`](./IMPORT.md) | CSV + JSON import pipeline |
-| [`CSV_SP-3254.5.md`](./CSV_SP-3254.5.md) | **Primary teaching CSV** — format + layout reference |
-| [`GRID.md`](./GRID.md) | Grid coordinates, zones, lane book |
-| [`SDC_JSON.md`](./SDC_JSON.md) | `.sdc.json` schema v1 |
+| [`IMPORT.md`](./IMPORT.md) | Import implementation notes (rule: `SDC-IMPORT-001`) |
+| [`GRID.md`](./GRID.md) | Grid implementation notes (rule: `SDC-GRID-001`) |
+| [`SDC_JSON.md`](./SDC_JSON.md) | `.sdc.json` v1 — superseded by `SDC-EXPORT-001` |
+
+The **SDC rule pack** ([`rules/`](./rules/)) is the source of truth for behavior. Rule pack version: `SDC-RULES-2026-06`. Big-ticket rebuild areas: import (`SDC-IMPORT-001`), routing (`SDC-ROUTE-001..004`, `SDC-SCORE-001`), grid (`SDC-GRID-001`).
 
 Also: [`AGENTS.md`](../../AGENTS.md) and [`.cursor/rules/`](../../.cursor/rules/).
 
-## Not active — do not follow
+## Reference (not requirements)
 
 | Location | Why |
 |----------|-----|
-| [`docs/archive/`](../archive/) | Prior rules, layout IDs, routing spec, stabilization plans, CSV semantics, session history |
-| [`docs/reference/routing-examples/`](../reference/routing-examples/) | Visual reference only — old R1–R7 routing rules are **not** requirements |
+| [`docs/reference/examples/`](../reference/examples/) | Bentley CSV + PDF examples for import/layout QA |
+| [`docs/reference/routing-examples/`](../reference/routing-examples/) | Prior-app routing screenshots — visual reference only |
 | Help modal content | Describes old app behavior — will be rewritten with rebuild |
 
-When you add new rules, add specs under `docs/agent/rules/` and register in `src/features/rules/registry.ts`.
+When you add a rule: add a spec under [`rules/`](./rules/), register it in [`rules/README.md`](./rules/README.md), and implement the module in `src/features/rules/` (see [`RULES_MODULAR.md`](./RULES_MODULAR.md)).

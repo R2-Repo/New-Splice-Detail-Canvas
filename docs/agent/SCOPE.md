@@ -35,7 +35,7 @@ CSV → [rebuild] → React Flow canvas → [rebuild] → export / print
 | Layout screenshots | [`docs/reference/images/`](../reference/images/) |
 | Routing screenshots | [`docs/reference/routing-examples/`](../reference/routing-examples/) — visual reference only |
 
-Prior implementation rules and engines live in [`docs/archive/`](../archive/) — **not active requirements**.
+Active implementation rules live in the SDC rule pack: [`docs/agent/rules/`](./rules/) — **the source of truth for behavior**.
 
 ## Out of scope (unless user adds)
 

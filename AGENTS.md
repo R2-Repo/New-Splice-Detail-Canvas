@@ -8,15 +8,16 @@ Read [`docs/agent/README.md`](docs/agent/README.md) first, then [`REBUILD.md`](d
 
 | File | Purpose |
 |------|---------|
-| `docs/agent/README.md` | **Index** — active vs archived docs |
-| `docs/agent/REBUILD.md` | Shell status, what was kept vs removed |
+| `docs/agent/README.md` | **Index** — active docs |
+| `docs/agent/REBUILD.md` | Rebuild status, what was kept vs rebuilt |
 | `docs/agent/SCOPE.md` | Product vision (unchanged at high level) |
+| `docs/agent/rules/README.md` | **SDC rule pack index** — canonical behavior specs |
 | `docs/agent/CONTEXT.md` | Current focus (current-only) |
 | `docs/agent/HANDOFF.md` | Last session summary |
 | `docs/agent/ARCHITECTURE.md` | Folder layout |
 | `docs/reference/examples/README.md` | Bentley CSV examples for future import work |
 
-Archived (prior app): `docs/archive/` — old rules, layout docs, refactor plan.
+Behavior source of truth: the SDC rule pack in `docs/agent/rules/` (`SDC-RULES-2026-06`).
 
 ## Workflow
 
@@ -54,7 +55,7 @@ npm run verify   # check + test:ci + build
 
 ## Rules
 
-Modular layout/routing rules live in `src/features/rules/`. See [`docs/agent/RULES_MODULAR.md`](docs/agent/RULES_MODULAR.md). When changing import, layout, or routing, run `test:rule` / `test:rules` before `verify`.
+Canonical behavior specs are the SDC rule pack: [`docs/agent/rules/`](docs/agent/rules/) (index: [`rules/README.md`](docs/agent/rules/README.md)). Code modules are modular under `src/features/rules/`; see [`docs/agent/RULES_MODULAR.md`](docs/agent/RULES_MODULAR.md). When changing import, layout, or routing, run `test:rule` / `test:rules` before `verify`.
 
 ## Response style
 

@@ -1,60 +1,46 @@
-# Rebuild — empty shell
+# Rebuild status
 
-> **Status:** Shell ready. Engines removed. Rebuild import → layout → routing next.
+> **Status:** SDC rule pack adopted as canonical specs (`SDC-RULES-2026-06`). Import, layout, routing, and grid code exist from the prior SP-3254 phase and will be rebuilt to match the rules.
 
 ## Product goal (unchanged)
 
 PWA that imports a Bentley CSV of fiber splice connections and renders an organized, uniform, interactive splice diagram on a canvas — exportable and printable.
 
-## What we kept
+## What we kept (do not change without user approval)
 
 | Layer | Location |
 |-------|----------|
 | Neumorphic theme | `src/styles/neumorphic-tokens.css`, `neumorphic.css`, chrome in `splice-diagram.css` |
 | App shell | `src/components/layout/AppShell.tsx` |
 | Toolbar (all buttons/icons) | `WorkflowCanvas.tsx` + `src/components/toolbar/` |
-| Import button UI | `src/components/import/CsvImportButton.tsx` (no parser wired) |
+| Import button UI | `src/components/import/CsvImportButton.tsx` |
 | Map button UI | `src/components/maps/MapEmbedButton.tsx` (stub popover) |
 | Help modal | `src/components/help/` |
-| React Flow canvas | `src/features/canvas/WorkflowCanvas.tsx` — empty nodes/edges |
+| React Flow canvas | `src/features/canvas/WorkflowCanvas.tsx` |
 | PWA + CI | `vite.config.ts`, `.github/workflows/` |
 | Reference CSVs/images | `docs/reference/` |
 
-## What we removed
+## Current engines (rebuild to match SDC rules)
 
-- CSV parser (`parseBentleyCsv`, import pipeline)
-- Layout rules + contract tests (`layoutRules.ts`, `LAYOUT_RULES.md`, etc.)
-- Routing engine (`spliceEdgeRouting`, `centerRouter`, quad engine, …)
-- Manual adjustment engine
-- Diagram domain model, nodes, edges, export/print logic
-- All layout/routing/manual-adjust tests
+These exist in `src/` from the prior phase. Each predates its SDC rule and will be reconciled:
 
-Archived prior docs: `docs/archive/` — **not active requirements**.
+- CSV import / parser (`src/features/import/`) -> [`SDC-IMPORT-001`](./rules/SDC-IMPORT-001.md)
+- Diagram domain model (`src/features/diagram/`) -> [`SDC-DATA-001`](./rules/SDC-DATA-001.md), [`SDC-CONNECT-001`](./rules/SDC-CONNECT-001.md)
+- Layout (`src/features/layout/`, ELK, horizontal + quad) -> [`SDC-LAYOUT-003`](./rules/SDC-LAYOUT-003.md)
+- Routing + scoring (`src/features/routing/`) -> [`SDC-ROUTE-004`](./rules/SDC-ROUTE-004.md), [`SDC-SCORE-001`](./rules/SDC-SCORE-001.md)
+- Grid (`src/features/grid/`, 24px pitch, LaneBook) -> [`SDC-GRID-001`](./rules/SDC-GRID-001.md)
+- Placement candidates (`src/features/rules/placement/`) -> superseded by `SDC-LAYOUT-003` + `SDC-SCORE-001`
 
-## Instruction hygiene (ground-zero ready)
-
-| Status | What |
-|--------|------|
-| ✅ | No engines/rules in `src/` |
-| ✅ | Cursor rules: `rebuild-phase`, `project-core`, `react-ui`, `concise-responses` only |
-| ✅ | Active agent docs: see [`README.md`](./README.md) (5 files) |
-| 📦 | Old rules/plans in `docs/archive/` |
-| 📎 | CSVs/images/routing screenshots = reference only until you cite them |
-| ⏳ | Toolbar + help = UI shell; behavior TBD |
-
-**Rules:** modular — one module per rule, not a monolithic doc. See [`RULES_MODULAR.md`](./RULES_MODULAR.md). User will supply modules; add specs to `docs/agent/` and code under `src/features/diagram/rules/` when ready.
+Rules: modular — one module per rule. See [`RULES_MODULAR.md`](./RULES_MODULAR.md). Specs live in [`rules/`](./rules/); code modules go under `src/features/rules/`.
 
 ## Rebuild order (suggested — user may override)
 
-1. **Domain + CSV import** — parse Bentley CSV → connection graph
-2. **Layout** — cable/tube/fiber placement on canvas
-3. **Routing** — splice legs / center lanes
-4. **Interaction** — drag, manual adjust, existing toggle
-5. **Export / print** — config save, PDF/print
-
-## Toolbar remapping
-
-Buttons are visible; most are **disabled** until a diagram loads (`hasDiagram = false` in `WorkflowCanvas.tsx`). Wire behavior as each subsystem is rebuilt.
+1. **Import** — Bentley CSV → normalized model (`SDC-IMPORT-001`, `SDC-DATA-001/002`, `SDC-CONNECT-001`)
+2. **Grid** — invisible routing grid + lanes (`SDC-GRID-001`)
+3. **Layout** — side assignment, fanouts, labels (`SDC-LAYOUT-001/002/003`, `SDC-LABEL-001`)
+4. **Routing** — orthogonal geometry + scoring (`SDC-ROUTE-001..004`, `SDC-SCORE-001`)
+5. **Interaction** — auto layout + manual locks (`SDC-UX-001`)
+6. **Validation + export** — messages, PDF/config (`SDC-VALIDATE-001`, `SDC-EXPORT-001`, `SDC-VISUAL-001`)
 
 ## Quality
 

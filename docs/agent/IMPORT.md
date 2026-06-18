@@ -1,33 +1,13 @@
-# Import pipeline
+# Import — implementation notes
 
-> CSV + `.sdc.json` → connection graph → ELK layout → grid routing → React Flow canvas.
+> Authoritative rule: [`rules/SDC-IMPORT-001.md`](./rules/SDC-IMPORT-001.md) (includes the Bentley Splice Report appendix). This file only records the **current code** so navigation stays easy during the import rebuild. Where the two disagree, the rule wins.
 
-## Entry point
-
-[`runImport()`](../../src/features/import/runImport.ts) — called from [`WorkflowCanvas`](../../src/features/canvas/WorkflowCanvas.tsx) on file import.
-
-## Formats
-
-| Format | Detection | Module |
-|--------|-----------|--------|
-| Bentley CSV | `.csv`, `Bentley Splice Report`, `Left ---` | `parseBentleyCsv.ts` |
-| App export | `.sdc.json`, `.json` v1 | `parseSdcJson.ts` |
-
-## CSV rules (Left section authoritative)
-
-- One `<->` row = one splice pair
-- Trailing/leading commas around `<->` are stripped
-- Blank To fiber # → copy From
-- To-side fixed tail: `fiber#`, tube, fiber color, device [, OS…]
-- **Terminating Device:** parsed structurally (field before cable on From; device slot on To) — **not stored or used** in graph/layout
-- Right `---` is hints only — never paired
-- Parse gap must be 0 before layout (`inspectBentleyCsv`)
-
-## Pipeline
+## Current pipeline
 
 ```
-CSV / JSON
-  → parse → ConnectionGraph (buildConnectionGraph)
+CSV / .sdc.json
+  → detectImportFormat → parse (parseBentleyCsv | parseSdcJson)
+  → buildConnectionGraph
   → classifyStrandGroups
   → pickBestLayout (placement candidates + route score) OR runLayoutEngine
   → routeConnections (LaneBook)
@@ -35,23 +15,26 @@ CSV / JSON
   → canvas
 ```
 
-`optimizeLayout` defaults to **true** in `runImport()` — tries side/stack candidates and picks lowest route score.
+Entry point: [`runImport()`](../../src/features/import/runImport.ts), called from `WorkflowCanvas` on file import. `optimizeLayout` defaults to `true`.
 
-## Modules
+## Current modules
 
 | Path | Role |
 |------|------|
-| `src/features/import/` | Parsers, inspect report, orchestrator |
+| `src/features/import/` | Parsers, `inspectBentleyCsv`, orchestrator |
 | `src/features/diagram/` | ConnectionGraph, TIA order, strand groups, RF builder |
 | `src/features/layout/` | Cable sides, ELK graph, horizontal + quad layout |
 | `src/features/routing/` | LaneBook routing, route quality scorer |
-| `src/features/rules/placement/` | Placement candidates, pickBestLayout |
+| `src/features/rules/placement/` | Placement candidates, `pickBestLayout` |
 | `src/features/grid/` | Pitch, zones, LaneBook |
 
-## Inspect UI
+Inspect UI: toolbar **Open connection inspector** → `ParseInspectOverlay`. Contract counts: `referenceCsvParse.test.ts`.
 
-Toolbar **Open connection inspector** → [`ParseInspectOverlay`](../../src/components/import/ParseInspectOverlay.tsx) with parse report.
+## Reference data
 
-## Reference tests
+Bentley CSV + PDF examples: [`docs/reference/examples/`](../reference/examples/) (includes `Left-SP-3254.5.csv` and the prior-app horizontal PDF oracles).
 
-Contract counts in [`referenceCsvParse.test.ts`](../../src/features/import/referenceCsvParse.test.ts).
+## Known gaps vs SDC-IMPORT-001 (see rules index "Open gaps")
+
+- Current parser predates the generic normalized-model contract (`NormalizedImport`, confidence levels, configurable header alias map). The Bentley-specific behaviors it implements are captured in the `SDC-IMPORT-001` Bentley appendix.
+- Placement/scoring code (`rules/placement/`, `scoreRouting.ts`) is the **old SP-3254 oracle approach**; it is superseded by `SDC-LAYOUT-003` + `SDC-SCORE-001` and will be reconciled in the routing rebuild. The matching tests (`sp3254Teaching.test.ts`, `sp3254Optimization.test.ts`) still exist in code.

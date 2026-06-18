@@ -1,42 +1,16 @@
-# `.sdc.json` export/import schema (v1)
+# `.sdc.json` v1 — superseded
 
-Minimal schema for round-tripping diagram state.
+> **Superseded by [`rules/SDC-EXPORT-001.md`](./rules/SDC-EXPORT-001.md).** The target persistence format is `DiagramConfig` (schemaVersion, rulePackVersion, normalizedImportModel, manualLocks, routeGeometry, validationResults, ...). This file documents the **current minimal v1** that the code still emits; provide a v1 → DiagramConfig migration during the export rebuild.
 
-## Version
+## Current v1 (code)
 
-`version: 1` — required.
+Parse: [`parseSdcJson.ts`](../../src/features/import/parseSdcJson.ts). Serialize: `serializeSdcJson()` (export button TBD).
 
-## Required fields
+Required: `version: 1`, `spliceName` (string), `layoutMode` (`"horizontal" | "quad"`).
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `version` | `1` | Schema version |
-| `spliceName` | string | Splice identifier |
-| `layoutMode` | `"horizontal"` \| `"quad"` | Active layout |
+Optional: `sourceCsv`, `sourceFileName`, `connectionGraph`, `layoutOverrides`, `nodePositions` (`Record<string,{x,y}>`).
 
-## Optional fields
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `sourceCsv` | string | Embedded Bentley CSV text |
-| `sourceFileName` | string | Original CSV filename |
-| `connectionGraph` | object | Serialized `ConnectionGraph` |
-| `layoutOverrides` | object | Callouts, toggles, etc. |
-| `nodePositions` | `Record<string, {x,y}>` | Pixel positions keyed by node id |
-
-## Import behavior
-
-1. If `connectionGraph` present → use directly
-2. Else if `sourceCsv` present → parse CSV → graph
-3. Apply `nodePositions` over auto layout when provided
-4. `layoutMode` selects horizontal vs quad engine
-
-## Code
-
-- Parse: [`parseSdcJson.ts`](../../src/features/import/parseSdcJson.ts)
-- Serialize: `serializeSdcJson()` (export button TBD)
-
-## Example
+Import behavior: use `connectionGraph` if present, else parse `sourceCsv`; apply `nodePositions` over auto layout; `layoutMode` selects the engine.
 
 ```json
 {
@@ -44,8 +18,6 @@ Minimal schema for round-tripping diagram state.
   "spliceName": "STATE_OFFICE",
   "layoutMode": "horizontal",
   "sourceCsv": "Bentley Splice Report\n...",
-  "nodePositions": {
-    "cable-288-SMF#from": { "x": 96, "y": 192 }
-  }
+  "nodePositions": { "cable-288-SMF#from": { "x": 96, "y": 192 } }
 }
 ```

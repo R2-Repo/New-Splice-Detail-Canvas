@@ -1,12 +1,12 @@
 # Modular rules
 
-> **Status:** Framework scaffolded. Registry empty — user provides rule modules incrementally.
+> **Status:** Framework scaffolded. Registry empty — rules implemented incrementally from the SDC pack.
 
 ## Why modular
 
 Prior attempts used one monolithic rules document for placement, routing, and connections. This rebuild gives **each rule its own module** with isolated tests, plus a **system suite** where all rules run together.
 
-Archived monolith: [`docs/archive/LAYOUT_RULES.md`](../archive/LAYOUT_RULES.md) — reference only, not active requirements.
+Canonical specs: the SDC rule pack in [`rules/`](./rules/) (index: [`rules/README.md`](./rules/README.md)). Rule IDs use `SDC-<GROUP>-<NUMBER>`; the matching code module id is the lowercase form (e.g. `SDC-IMPORT-001` -> `sdc-import-001`).
 
 ## Collaboration
 
@@ -66,15 +66,15 @@ npm run verify                        # full CI gate
 
 ## Add a rule (checklist)
 
-1. User sends: ID, requirement, stage, pass/fail examples, reference CSVs, related rules
-2. Copy `_template/` → `<id>/`; implement `check()`
-3. Write module tests (unit + reference)
-4. Register in [`registry.ts`](../../src/features/rules/registry.ts)
-5. Add [`docs/agent/rules/<id>.md`](./rules/)
-6. Run `npm run test:rule -- <id>` → `npm run test:rules` → `npm run verify`
+1. Pick the SDC spec from [`rules/`](./rules/) (ID, requirement, related rules, pass/fail behavior)
+2. Copy `_template/` → `<sdc-id>/` (lowercase); implement `check()`
+3. Emit `RuleViolation`s compatible with [`SDC-VALIDATE-001`](./rules/SDC-VALIDATE-001.md)
+4. Write module tests (unit + reference)
+5. Register in [`registry.ts`](../../src/features/rules/registry.ts)
+6. Run `npm run test:rule -- <sdc-id>` → `npm run test:rules` → `npm run verify`
 
 ## Agent workflow
 
 When changing import, layout, or routing: run affected `test:rule` targets, then `test:rules`, before `verify`.
 
-Do not invent rules from `docs/archive/`.
+All behavior comes from the SDC rule pack ([`rules/`](./rules/)). Do not invent rules outside it.
