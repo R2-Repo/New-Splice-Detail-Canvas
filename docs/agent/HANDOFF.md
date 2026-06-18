@@ -4,7 +4,45 @@
 
 ## Last updated
 
-2026-06-17 — **Adopted SDC rule pack as canonical specs**
+2026-06-17 — **Layout constants rule (SDC-CONST-001)**
+
+### What was done
+
+- Wrote [`SDC-CONST-001`](./rules/SDC-CONST-001.md): canonical numeric defaults (grid pitch/gap, bend clearance, fanout min/default/max spacing, cable-group separation, strand buffer, fusion dot radius, stroke widths, bend limits, page padding). Config rule, no validator module.
+- Added `src/features/layout/sdcDefaults.ts` exporting `SDC_DEFAULTS` (composes `GRID_PITCH`/`TUBE_GROUP_GAP` from grid constants) + `sdcDefaults.test.ts` (invariant checks).
+- Updated [`rules/README.md`](./rules/README.md): added `CONST` group + rule row + processing-order note; removed constants from Open gaps.
+- `npm run verify` green (91 tests, build OK).
+
+### Next session
+
+- Rebuild the grid (`SDC-GRID-001`) using `SDC_DEFAULTS`: lane/segment model, `available/reserved/occupied/blocked/manual-locked` states, side zones + center quadrants vocabulary. Then routing (`SDC-ROUTE-004`, `SDC-SCORE-001`).
+- New layout/routing/visual code must read `SDC_DEFAULTS` (no hardcoded pitch/spacing/dot/stroke).
+
+---
+
+## Earlier — Data foundation: normalized model + first rule modules
+
+### What was done
+
+- Added the normalized import model `src/features/import/normalize/` (`normalizeImport`, types): cable/tube/fiber records with source rows, per-cable 6/12 tube-count inference + confidence, one `ConnectionPair` + `FusionSpliceDot` per pair (deterministic ids), and warnings/errors. Wired into `runImport` as `ImportResult.normalizedImport` (non-breaking; `ConnectionGraph` unchanged).
+- Extended the rules framework (`src/features/rules/types.ts`, `runRules.ts`): `RuleStage` adds `data`; `RuleViolation` gains `severity`/`objectType`/`objectIds`/`sourceRows`/`suggestedFix`; `runRules` returns `errors`/`warnings` and `passed` = no error-severity (per SDC-VALIDATE-001). `DiagramSnapshot.normalizedImport` added; `buildSnapshot` populates it.
+- Implemented + registered four data-stage modules: `sdc-import-001`, `sdc-data-001`, `sdc-data-002`, `sdc-connect-001` (return `[]` when `normalizedImport` absent). Shared helper `sdcValidation.ts` forwards normalization messages.
+- Tests: per-module unit + Example-#1 reference tests, `normalizeImport.test.ts` (SP-3254), updated `runRules.test.ts` (registered rules; error-based pass; SP-3254 coverage). `npm run verify` green (85 tests, build OK).
+
+### Decisions / notes
+
+- **Non-breaking**: `ConnectionGraph` stays the layout/routing contract; normalized model is an added layer.
+- **Splice-only data is valid**: validators do not require full 6/12 tube population. `sdc-data-002` validates absolute-number validity + inferred count; low-confidence inference is a non-blocking warning.
+- **No TIA color-position check** in `sdc-data-002`: real Bentley drop-side colors legitimately diverge from TIA position (e.g. SP-3254 row 5). Belongs to a future SDC-ORDER chunk; also reconcile `tiaColors.ts` `RO`/`-BK` vs SDC `RS`/`/S`.
+
+### Next session
+
+- Write the layout-constants follow-up rule (pitch, spacing defaults, dot geometry), then rebuild the grid (`SDC-GRID-001`) and routing (`SDC-ROUTE-004`, `SDC-SCORE-001`).
+- Later: surface `normalizedImport.warnings`/validation in the UI; migrate `.sdc.json` v1 -> `DiagramConfig`.
+
+---
+
+## Earlier — Adopted SDC rule pack as canonical specs
 
 ### What was done
 

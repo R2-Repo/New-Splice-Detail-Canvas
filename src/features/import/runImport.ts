@@ -13,6 +13,8 @@ import { routeConnections, type RoutingResult } from "@/features/routing/routeCo
 import type { RouteQualityBreakdown } from "@/features/routing/scoreRouting";
 
 import { detectImportFormat } from "./detectImportFormat";
+import { normalizeImport } from "./normalize";
+import type { NormalizedImport } from "./normalize";
 import { enrichParsedCsv, parseBentleyCsv } from "./parseBentleyCsv";
 import { inspectBentleyCsv, type InspectReport } from "./inspectBentleyCsv";
 import { parseSdcJson } from "./parseSdcJson";
@@ -24,6 +26,8 @@ export type ImportResult = {
   zoneMode: "horizontal" | "quad";
   laneBook: LaneBook;
   connectionGraph: ConnectionGraph;
+  /** Normalized import model (SDC-IMPORT-001) when built from a CSV. */
+  normalizedImport?: NormalizedImport;
   inspectReport: InspectReport | null;
   layoutMode: LayoutMode;
   layout: LayoutResult;
@@ -93,6 +97,7 @@ async function runCsvImport(
 ): Promise<ImportResult> {
   const parsed = enrichParsedCsv(parseBentleyCsv(text, fileName));
   const inspectReport = inspectBentleyCsv(parsed);
+  const normalizedImport = normalizeImport(parsed);
 
   if (!inspectReport.readyForLayout) {
     return {
@@ -102,6 +107,7 @@ async function runCsvImport(
       zoneMode: "horizontal",
       laneBook: new LaneBook(),
       connectionGraph: EMPTY_GRAPH,
+      normalizedImport,
       inspectReport,
       layoutMode: options.layoutMode ?? "horizontal",
       layout: EMPTY_LAYOUT,
@@ -117,6 +123,7 @@ async function runCsvImport(
     options.layoutMode ?? "horizontal",
     undefined,
     options.optimizeLayout !== false,
+    normalizedImport,
   );
 }
 
@@ -128,12 +135,14 @@ async function runJsonImport(text: string, options: RunImportOptions): Promise<I
 
   const doc = result.document;
   let connectionGraph: ConnectionGraph;
+  let normalizedImport: NormalizedImport | undefined;
 
   if (doc.connectionGraph) {
     connectionGraph = doc.connectionGraph;
   } else if (doc.sourceCsv) {
     const parsed = enrichParsedCsv(parseBentleyCsv(doc.sourceCsv, doc.sourceFileName ?? "embedded.csv"));
     connectionGraph = buildConnectionGraph(parsed);
+    normalizedImport = normalizeImport(parsed);
   } else {
     return emptyErrorResult("JSON missing connectionGraph or sourceCsv");
   }
@@ -145,6 +154,7 @@ async function runJsonImport(text: string, options: RunImportOptions): Promise<I
     layoutMode,
     doc.nodePositions,
     options.optimizeLayout !== false && !doc.nodePositions,
+    normalizedImport,
   );
 }
 
@@ -154,6 +164,7 @@ async function finalizeImport(
   layoutMode: LayoutMode,
   nodePositions?: Record<string, { x: number; y: number }>,
   optimizeLayout = true,
+  normalizedImport?: NormalizedImport,
 ): Promise<ImportResult> {
   let layout: LayoutResult;
   let routing: RoutingResult;
@@ -191,6 +202,7 @@ async function finalizeImport(
     zoneMode: rf.zoneMode,
     laneBook: rf.laneBook,
     connectionGraph,
+    normalizedImport,
     inspectReport,
     layoutMode,
     layout,

@@ -1,11 +1,12 @@
 import { RULE_REGISTRY } from "./registry";
-import type {
-  DiagramSnapshot,
-  RuleId,
-  RuleModule,
-  RuleViolation,
-  RunRulesOptions,
-  RunRulesResult,
+import {
+  isError,
+  type DiagramSnapshot,
+  type RuleId,
+  type RuleModule,
+  type RuleViolation,
+  type RunRulesOptions,
+  type RunRulesResult,
 } from "./types";
 
 export function runRule(module: RuleModule, snapshot: DiagramSnapshot): RuleViolation[] {
@@ -30,9 +31,15 @@ export function runRules(
     violations.push(...moduleViolations);
   }
 
+  const errors = violations.filter(isError);
+  const warnings = violations.filter((violation) => !isError(violation));
+
   return {
-    passed: violations.length === 0,
+    // Only error-severity violations fail a run (SDC-VALIDATE-001).
+    passed: errors.length === 0,
     violations,
+    errors,
+    warnings,
     resultsByRule,
   };
 }

@@ -32,6 +32,7 @@ export async function buildSnapshotFromText(
   return {
     layoutMode: result.layoutMode,
     connectionGraph: result.connectionGraph,
+    normalizedImport: result.normalizedImport,
     layout: result.layout,
     routing: result.routing,
     reactFlow: {

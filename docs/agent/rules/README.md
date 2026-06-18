@@ -14,6 +14,7 @@ Each rule has its own file: `docs/agent/rules/SDC-<GROUP>-<NUMBER>.md`. This ind
 
 Groups:
 - `CORE` = shared vocabulary and diagram structure.
+- `CONST` = shared numeric defaults (pitch, spacing, dot, stroke).
 - `IMPORT` = CSV parsing and normalization.
 - `DATA` = imported cable data model and validation.
 - `ORDER` = color-code ordering rules.
@@ -33,6 +34,7 @@ Groups:
 | Rule ID | Title | Spec |
 |---|---|---|
 | SDC-CORE-001 | Glossary and Diagram Structure | [SDC-CORE-001.md](./SDC-CORE-001.md) |
+| SDC-CONST-001 | Layout Constants and Defaults | [SDC-CONST-001.md](./SDC-CONST-001.md) |
 | SDC-IMPORT-001 | CSV Import, Normalization, and Bentley Compatibility | [SDC-IMPORT-001.md](./SDC-IMPORT-001.md) |
 | SDC-DATA-001 | Fiber Optic Cable Hierarchy | [SDC-DATA-001.md](./SDC-DATA-001.md) |
 | SDC-DATA-002 | Buffer Tube Count | [SDC-DATA-002.md](./SDC-DATA-002.md) |
@@ -55,6 +57,8 @@ Groups:
 | SDC-VISUAL-001 | Visual Color Rendering and Legend | [SDC-VISUAL-001.md](./SDC-VISUAL-001.md) |
 
 ## Recommended processing order
+
+Shared numeric defaults [SDC-CONST-001] apply across every stage below (pitch, spacing, dot radius, stroke, bend limits).
 
 1. Parse and normalize the imported CSV [SDC-IMPORT-001].
 2. Build the cable, buffer tube, and strand hierarchy [SDC-DATA-001].
@@ -118,10 +122,22 @@ When rules conflict, resolve them in this order:
 
 These were flagged during adoption of the pack and are not yet written:
 
-- **Layout constants / defaults** (e.g. `SDC-CONST-001`): grid pitch, page/canvas size, fanout min/max + strand spacing values, fusion-dot radius and center-band geometry. The pack defines only the 60px bend clearance and visual stroke widths; everything else is "configurable" with no default. The pack's own big-picture review called for this rule.
 - **Exact fusion-dot placement geometry**: `SDC-CONNECT-001` covers identity/order/spacing but not precise 2-sided center-column coordinates or 4-sided distribution math.
 - **Page sizing / print fit** beyond "avoid clipping", and **interaction beyond locks** (multi-select, undo/redo) — minor.
 
+Written since: **SDC-CONST-001** (layout constants/defaults) — see the active rules table; canonical values exported as `SDC_DEFAULTS` in `src/features/layout/sdcDefaults.ts`.
+
 ## Implementing a rule in code
 
-Rule modules live in `src/features/rules/` (see [`../RULES_MODULAR.md`](../RULES_MODULAR.md)). The registry (`src/features/rules/registry.ts`) is currently empty; specs above are the contract. When a rule is implemented in code, use the lowercase module id (e.g. `SDC-IMPORT-001` -> `sdc-import-001`) and emit `RuleViolation`s compatible with [SDC-VALIDATE-001].
+Rule modules live in `src/features/rules/` (see [`../RULES_MODULAR.md`](../RULES_MODULAR.md)). Use the lowercase module id (e.g. `SDC-IMPORT-001` -> `sdc-import-001`) and emit `RuleViolation`s compatible with [SDC-VALIDATE-001] (severity, objectIds, sourceRows, suggestedFix). Only `error`-severity violations fail a run.
+
+### Implemented (data stage)
+
+| Rule | Module | Notes |
+|---|---|---|
+| SDC-IMPORT-001 | `src/features/rules/sdc-import-001/` | Normalized-model integrity (parse gap, source rows). Model built by `src/features/import/normalize/normalizeImport.ts`. |
+| SDC-DATA-001 | `src/features/rules/sdc-data-001/` | Hierarchy: orphans, duplicate ids, empty tubes/cables. |
+| SDC-DATA-002 | `src/features/rules/sdc-data-002/` | Absolute number validity + inferred count; low-confidence inference is a warning. Does not require full tube population. |
+| SDC-CONNECT-001 | `src/features/rules/sdc-connect-001/` | One dot per pair, endpoints resolve, duplicate/identical detection. |
+
+Data-stage rules read `snapshot.normalizedImport` and return `[]` when it is absent. Remaining rules (grid, layout, routing, score, label, validate, export, visual) are spec-only.
