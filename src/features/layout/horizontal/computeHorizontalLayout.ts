@@ -1,125 +1,153 @@
-import { pxToGrid, type GridPoint } from "@/features/grid/coords";
+import type { GridPoint } from "@/features/grid/coords";
 import type { GridNodePlacement } from "@/features/grid/placement";
-import { defaultHorizontalZoneLayout } from "@/features/grid/quadZones";
-import type { ConnectionGraph } from "@/features/diagram/types";
+import type { ConnectionGraph, FiberStrand } from "@/features/diagram/types";
 import type { StrandGroupLayoutInput } from "@/features/diagram/strandGroups";
-import { connectionRowIndex } from "@/features/diagram/strandGroups";
+import { compareFibers, tubeSortIndex } from "@/features/diagram/tiaColors";
 import type { PlacementPlan } from "@/features/rules/placement/types";
 
 import { assignCableSides, stackOrderForSide } from "../assignCableSides";
-import { applyElkLayout, collectElkNodePositions } from "../elk/applyElkLayout";
-import { buildElkGraph } from "../elk/buildElkGraph";
 import type { LayoutResult } from "../types";
 
-const BASE_ROW = 8;
-const CABLE_COL_LEFT = 4;
-const CABLE_COL_RIGHT_OFFSET = 2;
+// Deterministic splice-detail geometry (SDC-LAYOUT-002 / SDC-CONNECT-001).
+// Cables fan out individual strands grouped by buffer tube; each connection
+// meets its partner at a centered fusion splice dot via fanned orthogonal legs.
+const BASE_ROW = 6;
+const LEFT_CABLE_COL = 2;
+const LEFT_FANOUT_COL = 10;
+const CENTER_COL = 28;
+const RIGHT_FANOUT_COL = 46;
+const RIGHT_CABLE_COL = 54;
+const TUBE_GAP_ROWS = 1;
+const CABLE_GAP_ROWS = 2;
+
+type SideLayout = {
+  fiberPlacements: GridNodePlacement[];
+  cablePlacements: GridNodePlacement[];
+  fiberRow: Map<string, number>;
+  maxRow: number;
+};
+
+function fibersByLeg(graph: ConnectionGraph): Map<string, FiberStrand[]> {
+  const map = new Map<string, FiberStrand[]>();
+  for (const fiber of graph.fibers) {
+    const list = map.get(fiber.legId) ?? [];
+    list.push(fiber);
+    map.set(fiber.legId, list);
+  }
+  for (const list of map.values()) {
+    list.sort(
+      (a, b) =>
+        tubeSortIndex(a.tubeColor) - tubeSortIndex(b.tubeColor) ||
+        compareFibers(a, b) ||
+        a.fiberNumber - b.fiberNumber,
+    );
+  }
+  return map;
+}
+
+function layoutSide(
+  side: "left" | "right",
+  stack: string[],
+  byLeg: Map<string, FiberStrand[]>,
+  startRow: number,
+): SideLayout {
+  const fiberPlacements: GridNodePlacement[] = [];
+  const cablePlacements: GridNodePlacement[] = [];
+  const fiberRow = new Map<string, number>();
+
+  const fanoutCol = side === "left" ? LEFT_FANOUT_COL : RIGHT_FANOUT_COL;
+  const cableCol = side === "left" ? LEFT_CABLE_COL : RIGHT_CABLE_COL;
+
+  let row = startRow;
+  for (const legId of stack) {
+    const fibers = byLeg.get(legId) ?? [];
+    if (fibers.length === 0) continue;
+
+    const cableStart = row;
+    let lastTube: string | null = null;
+    for (const fiber of fibers) {
+      if (lastTube !== null && fiber.tubeColor !== lastTube) row += TUBE_GAP_ROWS;
+      fiberRow.set(fiber.id, row);
+      fiberPlacements.push({ nodeId: `fiber-${fiber.id}`, col: fanoutCol, row });
+      lastTube = fiber.tubeColor;
+      row += 1;
+    }
+    const cableEnd = row - 1;
+    cablePlacements.push({
+      nodeId: `cable-${legId}`,
+      col: cableCol,
+      row: Math.round((cableStart + cableEnd) / 2),
+    });
+    row += CABLE_GAP_ROWS;
+  }
+
+  return { fiberPlacements, cablePlacements, fiberRow, maxRow: row };
+}
 
 export async function computeHorizontalLayout(
   graph: ConnectionGraph,
   strandInput: StrandGroupLayoutInput,
   placementPlan?: PlacementPlan,
 ): Promise<LayoutResult> {
-  const sideAssignment =
-    placementPlan?.sideAssignment ?? assignCableSides(graph, "horizontal");
-  const zoneLayout = {
-    mode: "horizontal" as const,
-    horizontal: defaultHorizontalZoneLayout(graph.connections.length),
-  };
-
+  const sideAssignment = placementPlan?.sideAssignment ?? assignCableSides(graph, "horizontal");
   for (const leg of graph.legs) {
     leg.side = sideAssignment.get(leg.id);
   }
 
   const leftStack =
-    placementPlan?.stackOrder.get("left") ??
-    stackOrderForSide(graph, "left", sideAssignment);
+    placementPlan?.stackOrder.get("left") ?? stackOrderForSide(graph, "left", sideAssignment);
   const rightStack =
-    placementPlan?.stackOrder.get("right") ??
-    stackOrderForSide(graph, "right", sideAssignment);
+    placementPlan?.stackOrder.get("right") ?? stackOrderForSide(graph, "right", sideAssignment);
 
-  const elkGraph = buildElkGraph({
-    graph,
-    strandInput,
-    sideAssignment,
-    layoutMode: "horizontal",
-  });
-  const laidOut = await applyElkLayout(elkGraph);
-  const elkPositions = collectElkNodePositions(laidOut);
+  const byLeg = fibersByLeg(graph);
+  const left = layoutSide("left", leftStack, byLeg, BASE_ROW);
+  const right = layoutSide("right", rightStack, byLeg, BASE_ROW);
 
-  const placements: GridNodePlacement[] = [];
+  const placements: GridNodePlacement[] = [
+    ...left.cablePlacements,
+    ...right.cablePlacements,
+    ...left.fiberPlacements,
+    ...right.fiberPlacements,
+  ];
+
+  const fiberRow = new Map<string, number>([...left.fiberRow, ...right.fiberRow]);
+  const connById = new Map(graph.connections.map((c) => [c.id, c]));
+
   const splicePoints: LayoutResult["splicePoints"] = [];
   const connectionRows = new Map<string, number>();
-  const groupLanes = new Map<string, number>();
 
-  const rightStartCol = zoneLayout.horizontal.rightStartCol + CABLE_COL_RIGHT_OFFSET;
-
-  leftStack.forEach((legId, stackIndex) => {
-    placements.push({
-      nodeId: `cable-${legId}`,
-      col: CABLE_COL_LEFT,
-      row: BASE_ROW + stackIndex * 6,
-    });
-  });
-
-  rightStack.forEach((legId, stackIndex) => {
-    placements.push({
-      nodeId: `cable-${legId}`,
-      col: rightStartCol,
-      row: BASE_ROW + stackIndex * 6,
-    });
-  });
-
-  const centerStart = zoneLayout.horizontal.centerStartCol;
-  const centerEnd = zoneLayout.horizontal.centerEndCol;
-  const centerCols = centerEnd - centerStart + 1;
-
-  strandInput.globalConnectionOrder.forEach((connId, orderIndex) => {
-    const row = BASE_ROW + orderIndex;
-    connectionRows.set(connId, row);
-
-    const elkKey = `splice-${connId}`;
-    const elkPos = elkPositions.get(elkKey);
-    let col = centerStart + (orderIndex % centerCols);
-    if (elkPos) {
-      col = pxToGrid(elkPos.x);
-      col = Math.max(centerStart, Math.min(centerEnd, col));
+  // Fusion dot row = the left-side fiber's row, so the left leg runs straight
+  // across and the routing/fanning happens on the right (matches the oracles).
+  for (const connId of strandInput.globalConnectionOrder) {
+    const conn = connById.get(connId);
+    let row = BASE_ROW;
+    if (conn) {
+      const fromSide = sideAssignment.get(conn.fromLegId);
+      const leftFiberId = fromSide === "left" ? conn.fromFiberId : conn.toFiberId;
+      const rightFiberId = fromSide === "left" ? conn.toFiberId : conn.fromFiberId;
+      row = fiberRow.get(leftFiberId) ?? fiberRow.get(rightFiberId) ?? BASE_ROW;
     }
-
-    splicePoints.push({
-      connectionId: connId,
-      point: { col, row },
-    });
-
-    placements.push({
-      nodeId: `splice-${connId}`,
-      col,
-      row,
-    });
-  });
-
-  for (const group of strandInput.groups) {
-    const firstConn = group.connectionIds[0];
-    if (!firstConn) continue;
-    const row = connectionRows.get(firstConn) ?? BASE_ROW;
-    groupLanes.set(group.id, centerStart + (connectionRowIndex(strandInput.globalConnectionOrder, firstConn) % centerCols));
-    void row;
+    connectionRows.set(connId, row);
+    splicePoints.push({ connectionId: connId, point: { col: CENTER_COL, row } });
+    placements.push({ nodeId: `splice-${connId}`, col: CENTER_COL, row });
   }
 
-  for (const conn of graph.connections) {
-    const row = connectionRows.get(conn.id) ?? BASE_ROW;
-    placements.push(
-      { nodeId: `fiber-${conn.fromFiberId}`, col: CABLE_COL_LEFT + 3, row },
-      { nodeId: `fiber-${conn.toFiberId}`, col: rightStartCol - 1, row },
-    );
-  }
+  const zoneLayout = {
+    mode: "horizontal" as const,
+    horizontal: {
+      leftEndCol: LEFT_FANOUT_COL,
+      centerStartCol: LEFT_FANOUT_COL + 2,
+      centerEndCol: RIGHT_FANOUT_COL - 2,
+      rightStartCol: RIGHT_FANOUT_COL,
+    },
+  };
 
   return {
     layoutMode: "horizontal",
     zoneLayout,
     placements,
     splicePoints,
-    groupLanes,
+    groupLanes: new Map(),
     connectionRows,
   };
 }

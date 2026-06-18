@@ -2467,3 +2467,80 @@
   height: 10px;
   background: #111;
 }
+
+/* SDC cable body — small labeled box at the diagram edge. */
+.sdc-cablebox {
+  box-sizing: border-box;
+  width: 92px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  border: 1.5px solid #1b1b1b;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.sdc-cablebox__name {
+  font: 600 8px system-ui, sans-serif;
+  color: #1b1b1b;
+  line-height: 1.15;
+  text-align: center;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Big buffer-tube color label at each tube's first strand. */
+.sdc-tube-label {
+  position: absolute;
+  top: 50%;
+  left: -30px;
+  transform: translateY(-50%);
+  font: 800 13px system-ui, sans-serif;
+  pointer-events: none;
+  text-shadow: 0 0 2px #fff, 0 0 2px #fff;
+}
+
+.sdc-tube-label--right {
+  left: auto;
+  right: -30px;
+}
+
+/* SDC fanout strand labels — fiber code + OS circuit name, kept outboard. */
+.sdc-fiber-label {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1.1;
+}
+
+.sdc-fiber-label--right {
+  right: auto;
+  left: 14px;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.sdc-fiber-label__code {
+  font: 600 9px ui-monospace, monospace;
+  color: #1b1b1b;
+}
+
+.sdc-fiber-label__os {
+  font: 8px system-ui, sans-serif;
+  color: #555;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

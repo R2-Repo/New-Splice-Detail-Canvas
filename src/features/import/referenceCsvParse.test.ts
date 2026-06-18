@@ -16,23 +16,24 @@ function loadOldCsv(name: string): string {
 }
 
 describe("referenceCsvParse", () => {
-  it("parses Left-STATE_OFFICE.csv with gap 0 and 104 pairs", () => {
+  // Bidirectional listings dedupe to unique physical splices (half the raw rows).
+  it("parses Left-STATE_OFFICE.csv with gap 0 and 52 unique splices", () => {
     const parsed = parseBentleyCsv(loadCsv("Left-STATE_OFFICE.csv"), "Left-STATE_OFFICE.csv");
     expect(parsed.parseGap).toBe(0);
-    expect(parsed.pairs.length).toBe(104);
+    expect(parsed.pairs.length).toBe(52);
     expect(parsed.header.spliceName).toBe("STATE_OFFICE");
   });
 
-  it("parses Left-SPI-215_I-80.csv with gap 0 and 136 pairs", () => {
+  it("parses Left-SPI-215_I-80.csv with gap 0 and 68 unique splices", () => {
     const parsed = parseBentleyCsv(loadCsv("Left-SPI-215_I-80.csv"), "Left-SPI-215_I-80.csv");
     expect(parsed.parseGap).toBe(0);
-    expect(parsed.pairs.length).toBe(136);
+    expect(parsed.pairs.length).toBe(68);
   });
 
-  it("parses Left-SP-3254.5.csv with gap 0 and 20 pairs", () => {
+  it("parses Left-SP-3254.5.csv with gap 0 and 10 unique splices", () => {
     const parsed = parseBentleyCsv(loadCsv("Left-SP-3254.5.csv"), "Left-SP-3254.5.csv");
     expect(parsed.parseGap).toBe(0);
-    expect(parsed.pairs.length).toBe(20);
+    expect(parsed.pairs.length).toBe(10);
   });
 
   it("parses CSV Splice Detail Examples #1–#3", () => {

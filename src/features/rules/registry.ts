@@ -1,6 +1,7 @@
 import { sdcConnect001 } from "./sdc-connect-001/ruleModule";
 import { sdcData001 } from "./sdc-data-001/ruleModule";
 import { sdcData002 } from "./sdc-data-002/ruleModule";
+import { sdcGrid001 } from "./sdc-grid-001/ruleModule";
 import { sdcImport001 } from "./sdc-import-001/ruleModule";
 import type { RuleId, RuleModule, RuleStage } from "./types";
 
@@ -10,6 +11,7 @@ export const RULE_REGISTRY: RuleModule[] = [
   sdcData001,
   sdcData002,
   sdcConnect001,
+  sdcGrid001,
 ];
 
 export function listRules(): readonly RuleModule[] {

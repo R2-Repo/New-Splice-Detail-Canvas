@@ -1,16 +1,20 @@
 import { formatInspectReport, type InspectReport } from "@/features/import/inspectBentleyCsv";
+import { formatValidation } from "@/features/rules/validateImport";
+import type { RunRulesResult } from "@/features/rules/types";
 
 type ParseInspectOverlayProps = {
   open: boolean;
   report: InspectReport | null;
+  validation?: RunRulesResult | null;
   error?: string;
   onClose: () => void;
 };
 
-export function ParseInspectOverlay({ open, report, error, onClose }: ParseInspectOverlayProps) {
+export function ParseInspectOverlay({ open, report, validation, error, onClose }: ParseInspectOverlayProps) {
   if (!open) return null;
 
-  const body = report ? formatInspectReport(report) : error ?? "No import report available.";
+  const reportBody = report ? formatInspectReport(report) : error ?? "No import report available.";
+  const validationBody = validation ? formatValidation(validation) : null;
 
   return (
     <div className="parse-inspect-overlay" role="dialog" aria-label="CSV parse report">
@@ -22,7 +26,10 @@ export function ParseInspectOverlay({ open, report, error, onClose }: ParseInspe
             Close
           </button>
         </header>
-        <pre className="parse-inspect-overlay__body">{body}</pre>
+        <pre className="parse-inspect-overlay__body">{reportBody}</pre>
+        {validationBody ? (
+          <pre className="parse-inspect-overlay__body">{validationBody}</pre>
+        ) : null}
       </div>
     </div>
   );

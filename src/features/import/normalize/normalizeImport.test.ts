@@ -12,8 +12,8 @@ describe("normalizeImport (SP-3254.5)", () => {
   const parsed = enrichParsedCsv(parseBentleyCsv(readFileSync(SP3254_CSV, "utf8"), "Left-SP-3254.5.csv"));
   const normalized = normalizeImport(parsed);
 
-  it("preserves all 20 connection pairs with source rows", () => {
-    expect(normalized.connectionPairs).toHaveLength(20);
+  it("preserves the 10 unique connection pairs with source rows", () => {
+    expect(normalized.connectionPairs).toHaveLength(10);
     expect(normalized.connectionPairs.every((pair) => pair.sourceRows.length > 0)).toBe(true);
   });
 

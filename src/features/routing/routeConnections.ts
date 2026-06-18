@@ -1,15 +1,14 @@
 import { gridToPx, pixelToGridPoint, type GridPoint } from "@/features/grid/coords";
 import { LaneBook } from "@/features/grid/laneBook";
 import type { GridNodePlacement } from "@/features/grid/placement";
-import {
-  routeHorizontalSpliceLeg,
-  type OrthogonalRouteResult,
-  type RouteError,
-} from "@/features/grid/routeOrthogonal";
 import type { HorizontalZoneLayout } from "@/features/grid/zones";
 import { isInQuadCenter, type QuadZoneLayout } from "@/features/grid/quadZones";
 import type { ConnectionGraph } from "@/features/diagram/types";
+import { SDC_DEFAULTS } from "@/features/layout/sdcDefaults";
 import type { LayoutResult, ZoneLayout } from "@/features/layout/types";
+
+/** Bend clearance expressed in grid columns (SDC-CONST-001 / SDC-ROUTE-001). */
+const CLEARANCE_COLS = Math.max(1, Math.round(SDC_DEFAULTS.spacing.minBendClearancePx / SDC_DEFAULTS.grid.pitchPx));
 
 export type RoutedConnection = {
   connectionId: string;
@@ -60,32 +59,51 @@ export function routeConnections(
       continue;
     }
 
-    const leg1 = routeHorizontalSpliceLeg(source, splice, layout.zoneLayout.horizontal, laneBook);
-    const leg2 = routeHorizontalSpliceLeg(splice, target, layout.zoneLayout.horizontal, laneBook);
-
-    routes.push({
-      connectionId: conn.id,
-      ...combineHorizontalLegs(leg1, leg2, splice, target),
-    });
+    routes.push({ connectionId: conn.id, ...buildFannedRoute(source, splice, target) });
   }
 
   return { laneBook, routes };
 }
 
-function combineHorizontalLegs(
-  leg1: OrthogonalRouteResult | RouteError,
-  leg2: OrthogonalRouteResult | RouteError,
-  _splice: GridPoint,
+/** Orthogonal leg from a fanout exit point toward the fusion dot (3 grid points). */
+function legPoints(fiber: GridPoint, dot: GridPoint): GridPoint[] {
+  const dir = fiber.col <= dot.col ? 1 : -1;
+  let bendCol = fiber.col + dir * CLEARANCE_COLS;
+  bendCol = dir === 1 ? Math.min(bendCol, dot.col) : Math.max(bendCol, dot.col);
+  return [
+    { col: fiber.col, row: fiber.row },
+    { col: bendCol, row: fiber.row },
+    { col: bendCol, row: dot.row },
+    { col: dot.col, row: dot.row },
+  ];
+}
+
+/** Build a fanned orthogonal path: from-fiber -> fusion dot -> to-fiber. */
+function buildFannedRoute(
+  source: GridPoint,
+  splice: GridPoint,
   target: GridPoint,
 ): Omit<RoutedConnection, "connectionId"> {
-  if ("code" in leg1) return { path: "", routeError: leg1.message };
-  if ("code" in leg2) return { path: "", routeError: leg2.message };
+  const left = legPoints(source, splice);
+  const right = legPoints(target, splice).reverse();
+  const points = dedupePoints([...left, ...right.slice(1)]);
+  return { path: pointsToPath(points), midTrack: splice.col };
+}
 
-  const tx = gridToPx(target.col);
-  const ty = gridToPx(target.row);
+function dedupePoints(points: GridPoint[]): GridPoint[] {
+  const out: GridPoint[] = [];
+  for (const p of points) {
+    const last = out[out.length - 1];
+    if (last && last.col === p.col && last.row === p.row) continue;
+    out.push(p);
+  }
+  return out;
+}
 
-  const path = `${leg1.path} L ${tx} ${ty}`;
-  return { path, midTrack: leg1.midXCol };
+function pointsToPath(points: GridPoint[]): string {
+  return points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${gridToPx(p.col)} ${gridToPx(p.row)}`)
+    .join(" ");
 }
 
 export function routeQuadSpliceLeg(

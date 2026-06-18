@@ -19,7 +19,9 @@ export type InspectReport = {
 export function inspectBentleyCsv(parsed: ParsedCsv): InspectReport {
   const cableLegs = cableLegIdentityFromParsed(parsed);
   const failureBreakdown = analyzeParseFailures(parsed.failures);
-  const readyForLayout = parsed.parseGap === 0 && parsed.failures.length === 0;
+  // Bidirectional duplicate listings are expected, not blocking errors.
+  const blockingFailures = parsed.failures.filter((f) => f.reason !== "duplicatePair");
+  const readyForLayout = parsed.parseGap === 0 && blockingFailures.length === 0;
 
   const summaryLines = [
     `File: ${parsed.fileName}`,

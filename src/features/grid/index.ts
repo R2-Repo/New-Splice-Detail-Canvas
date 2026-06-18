@@ -1,5 +1,10 @@
 export { GRID_PITCH, TUBE_GROUP_GAP } from "./constants";
 export {
+  GRID_SEGMENT_STATUSES,
+  isBlockingStatus,
+  type GridSegmentStatus,
+} from "./segmentStatus";
+export {
   gridPoint,
   gridPointToPixel,
   gridToPx,

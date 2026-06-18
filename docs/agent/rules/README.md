@@ -139,5 +139,6 @@ Rule modules live in `src/features/rules/` (see [`../RULES_MODULAR.md`](../RULES
 | SDC-DATA-001 | `src/features/rules/sdc-data-001/` | Hierarchy: orphans, duplicate ids, empty tubes/cables. |
 | SDC-DATA-002 | `src/features/rules/sdc-data-002/` | Absolute number validity + inferred count; low-confidence inference is a warning. Does not require full tube population. |
 | SDC-CONNECT-001 | `src/features/rules/sdc-connect-001/` | One dot per pair, endpoints resolve, duplicate/identical detection. |
+| SDC-GRID-001 (partial) | `src/features/rules/sdc-grid-001/` | Routing-output integrity: route/connection count, lane-segment overlap, unroutable legs as warnings. Segment-status model in `src/features/grid/segmentStatus.ts`. Full lane/quadrant rebuild pending. |
 
-Data-stage rules read `snapshot.normalizedImport` and return `[]` when it is absent. Remaining rules (grid, layout, routing, score, label, validate, export, visual) are spec-only.
+Data-stage rules read `snapshot.normalizedImport` and return `[]` when it is absent. `sdc-grid-001` is routing-stage and reads `snapshot.routing`. Remaining rules (layout, route geometry, score, label, validate, export, visual) are spec-only. Shared numeric defaults are in `SDC-CONST-001` (`src/features/layout/sdcDefaults.ts`).

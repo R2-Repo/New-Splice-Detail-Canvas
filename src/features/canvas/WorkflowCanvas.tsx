@@ -53,6 +53,8 @@ import type { HorizontalZoneLayout } from "@/features/grid/zones";
 import type { QuadZoneLayout } from "@/features/grid/quadZones";
 import type { InspectReport } from "@/features/import/inspectBentleyCsv";
 import { runImport } from "@/features/import/runImport";
+import { validateImportResult } from "@/features/rules/validateImport";
+import type { RunRulesResult } from "@/features/rules/types";
 
 function WorkflowCanvasInner() {
   const [hasDiagram, setHasDiagram] = useState(false);
@@ -65,6 +67,7 @@ function WorkflowCanvasInner() {
   const [inspectReport, setInspectReport] = useState<InspectReport | null>(null);
   const [importError, setImportError] = useState<string | undefined>();
   const [connectionGraph, setConnectionGraph] = useState<ConnectionGraph | null>(null);
+  const [validation, setValidation] = useState<RunRulesResult | null>(null);
 
   const [collapseFullButtSplices, setCollapseFullButtSplices] = useState(true);
   const [calloutsVisible, setCalloutsVisible] = useState(true);
@@ -86,6 +89,7 @@ function WorkflowCanvasInner() {
       setInspectReport(result.inspectReport);
       setImportError(result.error);
       setConnectionGraph(result.connectionGraph);
+      setValidation(result.error ? null : validateImportResult(result));
       setHasDiagram(result.nodes.length > 0);
 
       if (result.zoneMode === "quad" && result.zoneLayout) {
@@ -120,6 +124,18 @@ function WorkflowCanvasInner() {
     void reloadLayout(lastImport.text, lastImport.fileName, layoutMode);
   }, [layoutMode, lastImport, reloadLayout]);
 
+  // Quick-load a bundled sample via `?sample=<name>` (e.g. ?sample=sp3254).
+  useEffect(() => {
+    const sample = new URLSearchParams(window.location.search).get("sample");
+    if (!sample) return;
+    const url = `${import.meta.env.BASE_URL}samples/${sample}.csv`;
+    void fetch(url)
+      .then((res) => (res.ok ? res.text() : Promise.reject(new Error(`sample ${sample} not found`))))
+      .then((text) => void handleImport(text, `${sample}.csv`))
+      .catch((err) => setImportError(String(err)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.shiftKey && event.key.toLowerCase() === "g") {
@@ -132,8 +148,14 @@ function WorkflowCanvasInner() {
 
   const noop = useCallback(() => {}, []);
 
+  const validationSummary = validation
+    ? validation.errors.length || validation.warnings.length
+      ? ` · ${validation.errors.length} err / ${validation.warnings.length} warn`
+      : " · checks passed"
+    : "";
+
   const hint = hasDiagram
-    ? `${connectionGraph?.spliceName ?? "Diagram"} · ${connectionGraph?.connections.length ?? 0} splices · Shift+G grid debug`
+    ? `${connectionGraph?.spliceName ?? "Diagram"} · ${connectionGraph?.connections.length ?? 0} splices${validationSummary} · Shift+G grid debug`
     : "Import a Bentley CSV or .sdc.json";
 
   return (
@@ -284,6 +306,7 @@ function WorkflowCanvasInner() {
       <ParseInspectOverlay
         open={inspectorOpen}
         report={inspectReport}
+        validation={validation}
         error={importError}
         onClose={() => setInspectorOpen(false)}
       />

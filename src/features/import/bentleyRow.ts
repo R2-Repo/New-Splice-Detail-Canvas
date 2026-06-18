@@ -2,6 +2,24 @@ import type { CsvEndpoint } from "./types";
 
 const OS_PATTERN = /^(CH\s+\d+|EL-\d+|\[.+\])/i;
 
+// TIA-598 color order (matches src/features/diagram/tiaColors.ts). Kept local to
+// avoid an import -> diagram dependency cycle.
+const TIA_FIBER = ["BL", "OR", "GR", "BR", "SL", "WH", "RD", "BK", "YL", "VI", "RO", "AQ"];
+const TIA_TUBE = [...TIA_FIBER, ...TIA_FIBER.map((c) => `${c}-BK`)];
+const FIBERS_PER_TUBE_STD = 12;
+
+/**
+ * Derive an absolute fiber number from buffer tube + fiber color (TIA position).
+ * Bentley "To" rows leave the number blank; it must come from tube+color, not be
+ * copied from the "From" side. Assumes standard 12-count grouping.
+ */
+export function deriveAbsoluteFiberNumber(tubeColor: string, fiberColor: string): number | null {
+  const tubeIdx = TIA_TUBE.indexOf(tubeColor.trim().toUpperCase());
+  const fiberIdx = TIA_FIBER.indexOf(fiberColor.trim().toUpperCase());
+  if (tubeIdx < 0 || fiberIdx < 0) return null;
+  return tubeIdx * FIBERS_PER_TUBE_STD + fiberIdx + 1;
+}
+
 function trimFields(parts: string[]): string[] {
   return parts.map((p) => p.trim());
 }
@@ -108,8 +126,10 @@ export function normalizeEndpoints(
   let endpointB = toCsvEndpoint(toRaw, "to");
   const endpointA = toCsvEndpoint(fromRaw, "from");
 
-  if (!endpointB.fiberNumber && endpointA.fiberNumber) {
-    endpointB = { ...endpointB, fiberNumber: endpointA.fiberNumber };
+  // Blank "To" fiber number: derive from tube+color (TIA), not copy the From #.
+  if (!endpointB.fiberNumber) {
+    const derived = deriveAbsoluteFiberNumber(endpointB.tubeColor, endpointB.fiberColor);
+    endpointB = { ...endpointB, fiberNumber: derived ?? endpointA.fiberNumber };
   }
 
   if ("osTag" in toRaw && toRaw.osTag) {
@@ -141,9 +161,10 @@ export function parseBentleyRow(line: string): {
 }
 
 export function endpointKey(endpoint: CsvEndpoint): string {
+  // Physical fiber identity only (no direction/leg) so a splice listed in both
+  // directions dedupes to one connection.
   return [
     endpoint.cableName,
-    endpoint.legId ?? endpoint.csvColumn,
     endpoint.tubeColor,
     String(endpoint.fiberNumber),
     endpoint.fiberColor,

@@ -13,11 +13,11 @@ describe("parseBentleyRow", () => {
     expect(parsed!.endpointB.osTag).toBe("CH 2724");
   });
 
-  it("copies blank To fiber number from From", () => {
+  it("derives a blank To fiber number from tube+color (BL/RO = #11)", () => {
     const line =
       "HUB_2-17,6 DROP (TSC): 3500 S & GARDEN GATE RD,   3,BL,GR,<->,144-SMF 3500 S DIST, ,BL,RO,HUB_2-17,CH 2724";
     const parsed = parseBentleyRow(line);
-    expect(parsed!.endpointB.fiberNumber).toBe(3);
+    expect(parsed!.endpointB.fiberNumber).toBe(11);
   });
 
   it("parses bracket ATMS OS tag on To side", () => {
@@ -36,7 +36,7 @@ describe("parseBentleyRow", () => {
     expect(parsed!.endpointB.osTag).toBe("CH 2305");
   });
 
-  it("copies blank To fiber number from From without persisting device", () => {
+  it("derives blank To fiber number (BL/BL = #1) without persisting device", () => {
     const from = {
       device: "DEV",
       cableName: "288-SMF DIST I-215: COMPLEX - STATE OFFICE",
@@ -52,7 +52,7 @@ describe("parseBentleyRow", () => {
       fiberColor: "BL",
     };
     const { endpointA, endpointB } = normalizeEndpoints(from, to);
-    expect(endpointB.fiberNumber).toBe(5);
+    expect(endpointB.fiberNumber).toBe(1);
     expect(endpointA.device).toBeUndefined();
     expect(endpointB.device).toBeUndefined();
   });
