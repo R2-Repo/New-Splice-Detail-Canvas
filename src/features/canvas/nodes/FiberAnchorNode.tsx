@@ -35,10 +35,17 @@ export function FiberAnchorNode({ data }: NodeProps) {
         }}
       />
       <div className={`sdc-fiber-label${right ? " sdc-fiber-label--right" : ""}`}>
-        <span className="sdc-fiber-label__code">
-          #{d.fiberNumber} {d.fiberColor}
-        </span>
-        {d.os ? <span className="sdc-fiber-label__os">{d.os}</span> : null}
+        {right ? (
+          <span className="sdc-fiber-label__line">
+            <span className="sdc-fiber-label__code">{d.fiberColor}</span>
+            {d.os ? <span className="sdc-fiber-label__os"> ({d.os})</span> : null}
+          </span>
+        ) : (
+          <span className="sdc-fiber-label__line">
+            {d.os ? <span className="sdc-fiber-label__os">({d.os}) </span> : null}
+            <span className="sdc-fiber-label__code">{d.fiberColor}</span>
+          </span>
+        )}
       </div>
       <Handle type="source" position={Position.Right} id="out" />
       <Handle type="target" position={Position.Left} id="in" />

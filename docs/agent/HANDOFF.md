@@ -4,7 +4,27 @@
 
 ## Last updated
 
-2026-06-17 — **Fixed CSV import data model (major correctness bug)**
+2026-06-18 — **Visual polish toward the PDF oracle**
+
+### What was done (verified against the rendered oracle)
+- Rounded corners on splice routes (`routeConnections.pointsToPath` -> quadratic bevels).
+- Oracle-style strand labels: `(OS) COLOR` on the left, `COLOR (OS)` on the right (`FiberAnchorNode`).
+- Bigger buffer-tube color labels (BL/GR/VI).
+- Title/metadata block top-left: added `location`/`reportDate` to `ConnectionGraph` (set in `buildConnectionGraph`), new `TitleNode` rendering Splice#/Report Date/Desc/Location.
+- `npm run verify` green (101 tests, build OK). View: `http://localhost:5173/?sample=sp3254`.
+
+### Result
+Close to the oracle: title block, cable boxes, tube-color breakout fans with big labels, `(OS) COLOR` labels, rounded fanned routing into center fusion dots, 10 correct splices.
+
+### Remaining gaps vs oracle (next)
+- Side distribution differs (72-SMF lands on the left here vs right in oracle 1) - this is the layout side heuristic.
+- Tube "trunk" is a fan of thin curves rather than one thick trunk that splits.
+- Right-side routing could bundle into cleaner vertical buses; reduce crossings.
+- 4-side (quad) mode not restyled.
+
+---
+
+## Earlier — Fixed CSV import data model (major correctness bug)
 
 ### The bug (confirmed by dumping the model)
 The SP-3254 CSV has 20 rows but they are **10 physical splices listed in both directions**, and every "To" fiber number is blank. The parser was (a) copying the From number onto the To side (so `144 VI/YL` became `#1` instead of its real `#117`, even impossible numbers like `6-DROP BL/#29`), and (b) keeping both directions, so the model had 20 connections / 40 fibers / 8 from/to legs — the diagram drew every splice twice.

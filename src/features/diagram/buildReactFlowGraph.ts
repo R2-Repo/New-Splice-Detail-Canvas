@@ -33,6 +33,18 @@ export function buildReactFlowGraph(
   routing: RoutingResult,
 ): ReactFlowGraph {
   const nodes: Node[] = [];
+
+  nodes.push({
+    id: "diagram-title",
+    type: "title",
+    position: { x: gridToPx(1), y: gridToPx(0) },
+    data: {
+      spliceName: graph.spliceName,
+      location: graph.location,
+      reportDate: graph.reportDate,
+    },
+  });
+
   const routeByConn = new Map(routing.routes.map((r) => [r.connectionId, r]));
   const fiberById = new Map(graph.fibers.map((f) => [f.id, f]));
   const placementByNode = new Map(layout.placements.map((p) => [p.nodeId, p]));

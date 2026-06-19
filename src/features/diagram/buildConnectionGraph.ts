@@ -99,6 +99,8 @@ export function buildConnectionGraph(parsedInput: ParsedCsv | string, fileName?:
 
   return {
     spliceName: parsed.header.spliceName,
+    location: parsed.header.location,
+    reportDate: parsed.header.reportDate,
     legs,
     tubes,
     fibers,

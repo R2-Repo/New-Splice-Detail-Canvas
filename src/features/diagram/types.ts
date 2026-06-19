@@ -41,6 +41,8 @@ export type SpliceConnection = {
 
 export type ConnectionGraph = {
   spliceName: string;
+  location?: string;
+  reportDate?: string;
   legs: CableLeg[];
   tubes: BufferTube[];
   fibers: FiberStrand[];

@@ -100,10 +100,37 @@ function dedupePoints(points: GridPoint[]): GridPoint[] {
   return out;
 }
 
+const CORNER_RADIUS = 8;
+
+function towards(
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  r: number,
+): { x: number; y: number } {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const rr = Math.min(r, len / 2);
+  return { x: from.x + (dx / len) * rr, y: from.y + (dy / len) * rr };
+}
+
+/** Orthogonal polyline with rounded corners (quadratic bevels at each bend). */
 function pointsToPath(points: GridPoint[]): string {
-  return points
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${gridToPx(p.col)} ${gridToPx(p.row)}`)
-    .join(" ");
+  const pts = points.map((p) => ({ x: gridToPx(p.col), y: gridToPx(p.row) }));
+  if (pts.length < 3) {
+    return pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+  }
+
+  let d = `M ${pts[0]!.x} ${pts[0]!.y}`;
+  for (let i = 1; i < pts.length - 1; i += 1) {
+    const cur = pts[i]!;
+    const a = towards(cur, pts[i - 1]!, CORNER_RADIUS);
+    const b = towards(cur, pts[i + 1]!, CORNER_RADIUS);
+    d += ` L ${a.x} ${a.y} Q ${cur.x} ${cur.y} ${b.x} ${b.y}`;
+  }
+  const last = pts[pts.length - 1]!;
+  d += ` L ${last.x} ${last.y}`;
+  return d;
 }
 
 export function routeQuadSpliceLeg(

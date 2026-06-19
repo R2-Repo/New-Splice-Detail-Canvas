@@ -2468,6 +2468,33 @@
   background: #111;
 }
 
+/* SDC title / metadata block (top-left), mirrors the report header. */
+.sdc-title {
+  box-sizing: border-box;
+  min-width: 280px;
+  padding: 8px 12px;
+  border: 1px solid #1b1b1b;
+  border-radius: 10px;
+  background: #ffffff;
+  font: 9px ui-monospace, monospace;
+  color: #1b1b1b;
+  line-height: 1.5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.sdc-title__row {
+  display: flex;
+  gap: 14px;
+}
+
+.sdc-title__field {
+  white-space: nowrap;
+}
+
+.sdc-title__line {
+  white-space: nowrap;
+}
+
 /* SDC cable body — small labeled box at the diagram edge. */
 .sdc-cablebox {
   box-sizing: border-box;
@@ -2498,49 +2525,47 @@
 .sdc-tube-label {
   position: absolute;
   top: 50%;
-  left: -30px;
+  left: -34px;
   transform: translateY(-50%);
-  font: 800 13px system-ui, sans-serif;
+  font: 800 16px system-ui, sans-serif;
   pointer-events: none;
-  text-shadow: 0 0 2px #fff, 0 0 2px #fff;
+  text-shadow: 0 0 2px #fff, 0 0 2px #fff, 0 0 2px #fff;
 }
 
 .sdc-tube-label--right {
   left: auto;
-  right: -30px;
+  right: -34px;
 }
 
-/* SDC fanout strand labels — fiber code + OS circuit name, kept outboard. */
+/* SDC fanout strand labels — "(OS) COLOR" on the left, "COLOR (OS)" on the right. */
 .sdc-fiber-label {
   position: absolute;
   top: 50%;
-  right: 14px;
+  right: 12px;
   transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  text-align: right;
   white-space: nowrap;
   pointer-events: none;
   line-height: 1.1;
+  text-align: right;
 }
 
 .sdc-fiber-label--right {
   right: auto;
-  left: 14px;
-  align-items: flex-start;
+  left: 12px;
   text-align: left;
 }
 
+.sdc-fiber-label__line {
+  display: inline-flex;
+  align-items: baseline;
+}
+
 .sdc-fiber-label__code {
-  font: 600 9px ui-monospace, monospace;
+  font: 700 9px ui-monospace, monospace;
   color: #1b1b1b;
 }
 
 .sdc-fiber-label__os {
   font: 8px system-ui, sans-serif;
   color: #555;
-  max-width: 130px;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
