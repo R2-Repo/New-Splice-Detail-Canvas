@@ -16,11 +16,14 @@
 | Quad zones | `quadZones.ts` — edge bands; not rebuilt to new group-lane model |
 | Debug | Shift+G or `?gridDebug=1` |
 
-## Manual locks (not wired yet)
+## Manual locks (SDC-UX-001)
 
-- Vocabulary and `LaneBook` API support `manual-locked`.
-- No drag → lock → re-route loop yet ([`SDC-UX-001`](./rules/SDC-UX-001.md)).
-- Next: persist locks, mark grid segments, reroute unlocked strands around them.
+- Hybrid mode: auto layout always runs; drags create **locks** (no Auto/Manual toggle).
+- Code: `src/features/interaction/` (`manualLocks`, `applyLocksToLayout`, `rerunLayoutWithLocks`).
+- Canvas: cable / splice / fiber drags → lock → partial rerun; context menu unlock; toolbar Reset / Unlock all.
+- `LaneBook.tryReserve(..., "manual-locked")` seeded before routing when locks exist.
+- Persistence: `.sdc.json` v1 `manualLocks` field; export via toolbar.
+- Spec: [`rules/SDC-UX-001.md`](./rules/SDC-UX-001.md).
 
 ## Remaining vs SDC-GRID-001
 

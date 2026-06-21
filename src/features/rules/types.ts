@@ -5,6 +5,7 @@ import type { LaneBook } from "@/features/grid/laneBook";
 import type { QuadZoneLayout } from "@/features/grid/quadZones";
 import type { HorizontalZoneLayout } from "@/features/grid/zones";
 import type { NormalizedImport } from "@/features/import/normalize";
+import type { ManualLock } from "@/features/interaction/manualLocks";
 import type { LayoutResult } from "@/features/layout/types";
 import type { RoutingResult } from "@/features/routing/routeConnections";
 
@@ -53,6 +54,7 @@ export type DiagramSnapshot = {
   normalizedImport?: NormalizedImport;
   layout: LayoutResult;
   routing: RoutingResult;
+  manualLocks?: ManualLock[];
   reactFlow: ReactFlowSnapshot;
 };
 

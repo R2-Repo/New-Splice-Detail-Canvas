@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 
 import {
-  AutoIcon,
   CalloutIcon,
   CollapseIcon,
   ExportConfigIcon,
@@ -9,11 +8,11 @@ import {
   HorizontalLayoutIcon,
   InspectIcon,
   ListIcon,
-  ManualIcon,
   MapIcon,
   PrintIcon,
   QuadLayoutIcon,
   ReportIcon,
+  ResetIcon,
 } from "@/components/toolbar/ToolbarIcon";
 import {
   DropFileIllustration,
@@ -77,8 +76,8 @@ export function HelpGuideContent() {
           <ToolbarMapItem icon={<CollapseIcon />} label="Tubes" />
           <ToolbarMapItem icon={<CalloutIcon />} label="Callouts" />
           <ToolbarMapItem icon={<ListIcon />} label="Circuits" />
-          <ToolbarMapItem icon={<AutoIcon />} label="Auto" />
-          <ToolbarMapItem icon={<ManualIcon />} label="Manual" />
+          <ToolbarMapItem icon={<ResetIcon />} label="Reset layout" />
+          <ToolbarMapItem icon={<ResetIcon />} label="Unlock all" />
           <ToolbarMapItem icon={<HorizontalLayoutIcon />} label="L/R" />
           <ToolbarMapItem icon={<QuadLayoutIcon />} label="4-side" />
           <ToolbarMapItem icon={<MapIcon />} label="Map" />

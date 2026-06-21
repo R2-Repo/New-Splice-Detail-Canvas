@@ -4,37 +4,32 @@
 
 ## Phase
 
-**Paused — grid/routing (horizontal) landed; deeper testing deferred.** User smoke-tested SP-3254 (`?sample=sp3254`); nothing obviously wrong. **Next chat priority: auto + manual adjustment modes ([`SDC-UX-001`](./rules/SDC-UX-001.md))** — needed before rigorous layout/routing QA.
+**Hybrid UX (SDC-UX-001) landed.** Grid/routing horizontal baseline + lock-based manual adjustment. Next: deeper grid/routing QA, quad on new grid model.
 
 ## Baseline (2026-06-21)
 
 | Item | Status |
 |------|--------|
 | Import + data | Normalized model + validators (`sdc-import/data/connect-001`) |
-| Grid + routing (horizontal) | `LaneBook` + `buildLayoutOccupancy`; `horizontalRouter.ts`; `groupLanes` / `connectionMidCols` / `fanoutExits`; validators `sdc-grid-001`, `sdc-route-001..004` |
-| Scoring | `scoreRouting.ts` (SDC-SCORE-001); `pickBestLayout` + expanded candidates |
-| Visual | Tube trunk + strand fans; oracle-style labels/title (prior sessions) |
-| **Interaction** | **Not rebuilt** — toolbar Auto/Manual toggle shell only; CSS hooks in `splice-diagram.css`; no lock model wired to grid/router |
-| Quality | `npm run verify` green (108 tests) last session |
+| Grid + routing (horizontal) | `LaneBook`, `horizontalRouter`, route validators, scoring |
+| **Interaction** | **Hybrid mode** — locks not modes; drag → lock → rerun; Reset / Unlock all; `.sdc.json` `manualLocks`; `sdc-ux-001` validator |
+| Visual | Tube trunk + strand fans; oracle-style labels/title |
+| Quality | `npm run verify` green (112+ tests) |
 
-## In scope NOW (next chat)
+## In scope NOW
 
-- **SDC-UX-001:** auto layout always on; manual drags → locked overrides on grid; retry/re-import respects locks; unlock/reset flows.
-- Reconcile toolbar **Auto adjust / Manual adjust** with rule spec (locks, not a mode that disables auto).
-- Wire `manual-locked` segments into `LaneBook` + `routeConnections` when locks exist.
+- Deeper grid/routing regression + reference CSV matrix (post-UX).
+- Quad/4-side on new grid model + hybrid locks for quad.
 
-## Paused (revisit after UX)
+## Paused / deferred
 
-- Deeper grid/routing regression + reference CSV matrix.
-- Quad/4-side on new grid model.
-- Score/plan breakdown in validation UI.
-- Oracle side assignment (e.g. 72-SMF orientation).
+- Full `DiagramConfig` / PDF export (SDC-EXPORT-001).
+- Bundle marquee multi-select locks.
+- Undo/redo.
 
 ## Known gaps
 
-- Quad: legacy ELK + old quad router.
-- `.sdc.json` v1 vs `DiagramConfig` ([`SDC-EXPORT-001`](./rules/SDC-EXPORT-001.md)).
-- `tiaColors` vs SDC-ORDER abbreviations.
+- Quad: legacy ELK + old quad router; hybrid UX horizontal-only for drags.
 - Browser: do not import `@/features/rules` barrel (use `validateImport`, `types` directly).
 
 ## Out of scope

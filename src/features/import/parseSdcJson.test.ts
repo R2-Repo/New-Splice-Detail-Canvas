@@ -22,13 +22,25 @@ describe("parseSdcJson", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("round-trips serialize", () => {
+  it("round-trips serialize with manual locks", () => {
     const doc: SdcJsonDocument = {
       version: SDC_JSON_VERSION,
       spliceName: "A",
-      layoutMode: "quad",
+      layoutMode: "horizontal",
+      manualLocks: [
+        {
+          lockId: "cable:leg-a",
+          objectType: "cable",
+          objectId: "leg-a",
+          lockedGeometry: { col: 2, row: 10, side: "left" },
+          createdAt: "2026-06-21T00:00:00.000Z",
+        },
+      ],
     };
     const parsed = parseSdcJson(serializeSdcJson(doc));
     expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.document.manualLocks?.length).toBe(1);
+    }
   });
 });

@@ -2,6 +2,7 @@ import type { GridPoint } from "@/features/grid/coords";
 import type { GridNodePlacement } from "@/features/grid/placement";
 import type { HorizontalZoneLayout } from "@/features/grid/zones";
 
+import type { ManualLock } from "@/features/interaction/manualLocks";
 import type { LayoutMode } from "@/features/diagram/types";
 import type { StrandGroupLayoutInput } from "@/features/diagram/strandGroups";
 import type { PlacementPlan } from "@/features/rules/placement/types";
@@ -44,6 +45,7 @@ export type LayoutOptions = {
   layoutMode: LayoutMode;
   placementPlan?: PlacementPlan;
   strandInput?: StrandGroupLayoutInput;
+  manualLocks?: ManualLock[];
   overrides?: {
     nodePositions?: Record<string, { x: number; y: number }>;
   };

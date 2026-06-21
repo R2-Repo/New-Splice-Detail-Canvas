@@ -11,6 +11,7 @@ export function snapshotFromImportResult(result: ImportResult): DiagramSnapshot 
     normalizedImport: result.normalizedImport,
     layout: result.layout,
     routing: result.routing,
+    manualLocks: result.manualLocks,
     reactFlow: {
       nodes: result.nodes,
       edges: result.edges,

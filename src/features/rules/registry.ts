@@ -7,6 +7,7 @@ import { sdcRoute001 } from "./sdc-route-001/ruleModule";
 import { sdcRoute002 } from "./sdc-route-002/ruleModule";
 import { sdcRoute003 } from "./sdc-route-003/ruleModule";
 import { sdcRoute004 } from "./sdc-route-004/ruleModule";
+import { sdcUx001 } from "./sdc-ux-001/ruleModule";
 import type { RuleId, RuleModule, RuleStage } from "./types";
 
 /** Active rule modules in pipeline order (SDC rule pack). */
@@ -20,6 +21,7 @@ export const RULE_REGISTRY: RuleModule[] = [
   sdcRoute002,
   sdcRoute003,
   sdcRoute004,
+  sdcUx001,
 ];
 
 export function listRules(): readonly RuleModule[] {

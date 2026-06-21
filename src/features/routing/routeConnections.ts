@@ -6,6 +6,8 @@ import type { HorizontalZoneLayout } from "@/features/grid/zones";
 import { isInQuadCenter, type QuadZoneLayout } from "@/features/grid/quadZones";
 import { classifyStrandGroups } from "@/features/diagram/strandGroups";
 import type { ConnectionGraph } from "@/features/diagram/types";
+import { applyManualLocksToLaneBook } from "@/features/interaction/applyManualLocksToLaneBook";
+import type { ManualLock } from "@/features/interaction/manualLocks";
 import type { LayoutResult, ZoneLayout } from "@/features/layout/types";
 
 import {
@@ -46,8 +48,10 @@ function fanoutExitPoint(
 export function routeConnections(
   graph: ConnectionGraph,
   layout: LayoutResult,
+  manualLocks: ManualLock[] = [],
 ): RoutingResult {
   const laneBook = buildLayoutOccupancy(layout);
+  applyManualLocksToLaneBook(laneBook, manualLocks, layout);
   const points = placementMap(layout.placements);
   const routes: RoutedConnection[] = [];
   const strandInput = classifyStrandGroups(graph);

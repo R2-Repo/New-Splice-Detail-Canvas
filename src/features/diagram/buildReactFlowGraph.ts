@@ -9,6 +9,7 @@ import { fiberColorToHex, isStripedColor, needsContrastOutline } from "@/feature
 import { tubeSortIndex } from "@/features/diagram/tiaColors";
 import type { LayoutResult } from "@/features/layout/types";
 import type { RoutingResult } from "@/features/routing/routeConnections";
+import type { ManualLock } from "@/features/interaction/manualLocks";
 
 export type ReactFlowGraph = {
   nodes: Node[];
@@ -36,6 +37,7 @@ export function buildReactFlowGraph(
   graph: ConnectionGraph,
   layout: LayoutResult,
   routing: RoutingResult,
+  manualLocks: ManualLock[] = [],
 ): ReactFlowGraph {
   const nodes: Node[] = [];
 
@@ -43,6 +45,8 @@ export function buildReactFlowGraph(
     id: "diagram-title",
     type: "title",
     position: { x: gridToPx(1), y: gridToPx(0) },
+    draggable: false,
+    selectable: false,
     data: {
       spliceName: graph.spliceName,
       location: graph.location,
@@ -111,7 +115,13 @@ export function buildReactFlowGraph(
       id: `cable-${leg.id}`,
       type: "cable",
       position: { x: gridToPx(placement.col), y: midY - CABLE_BOX_H / 2 },
-      data: { label: leg.cableName, side, role: leg.role },
+      draggable: layout.layoutMode === "horizontal",
+      data: {
+        label: leg.cableName,
+        side,
+        role: leg.role,
+        locked: manualLocks.some((l) => l.objectType === "cable" && l.objectId === leg.id),
+      },
     });
   }
 
@@ -127,6 +137,7 @@ export function buildReactFlowGraph(
       id: `fiber-${fiber.id}`,
       type: "fiberAnchor",
       position: { x: fx, y: fy },
+      draggable: layout.layoutMode === "horizontal",
       data: {
         fiberNumber: fiber.fiberNumber,
         tubeColor: fiber.tubeColor,
@@ -188,9 +199,11 @@ export function buildReactFlowGraph(
       id: `splice-${conn.id}`,
       type: "splicePoint",
       position: { x: gridToPx(placement.col), y: gridToPx(placement.row) },
+      draggable: layout.layoutMode === "horizontal",
       data: {
         connectionId: conn.id,
         color: fiberColorToHex(fiberById.get(conn.fromFiberId)?.fiberColor),
+        locked: manualLocks.some((l) => l.objectType === "spliceDot" && l.objectId === conn.id),
       },
     });
   }
@@ -209,6 +222,8 @@ export function buildReactFlowGraph(
         connectionId: conn.id,
         color: fiberColorToHex(fromFiber?.fiberColor),
         outline: needsContrastOutline(fromFiber?.fiberColor),
+        locked: manualLocks.some((l) => l.objectType === "strandLane" && l.objectId === conn.id),
+        midTrack: route?.midTrack,
       },
     };
   });

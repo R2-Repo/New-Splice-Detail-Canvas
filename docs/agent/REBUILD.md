@@ -10,7 +10,7 @@
 | 2 Grid | SDC-GRID-001 | Done (horizontal); quad deferred |
 | 3 Layout | SDC-LAYOUT-* | Partial — fanout geometry + side assignment; not all layout validators |
 | 4 Routing | SDC-ROUTE-*, SDC-SCORE-001 | Done (horizontal); validators registered |
-| 5 Interaction | **SDC-UX-001** | **Next** — toolbar shell only |
+| 5 Interaction | **SDC-UX-001** | **Done** — hybrid locks, no mode toggle |
 | 6 Export | SDC-EXPORT-001, etc. | Not started |
 
 ## Product goal (unchanged)

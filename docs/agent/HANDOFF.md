@@ -4,50 +4,37 @@
 
 ## Last updated
 
-2026-06-21 — **Session end: grid/routing paused; UX modes next**
+2026-06-21 — **Hybrid UX (SDC-UX-001) implemented**
 
-### Shipped this epic (grid + routing, horizontal first)
+### Shipped
 
-All six plan phases completed in code + tests:
+- **Lock model** — `src/features/interaction/` (`ManualLock`, `applyLocksToLayout`, `rerunLayoutWithLocks`).
+- **Pipeline** — locks constrain layout + `manual-locked` LaneBook segments before routing; `runImport` / `routeConnections` accept locks.
+- **Toolbar** — removed Auto/Manual toggle; **Reset to auto layout** + **Unlock all** always visible; lock count in hint.
+- **Canvas** — cable / splice / fiber drag → snap → lock → rerun (horizontal); edge click or context menu **Lock strand lane**; right-click **Unlock selected** / **Unlock all**.
+- **Validator** — `sdc-ux-001` registered.
+- **Persistence** — `.sdc.json` v1 `manualLocks`; Export diagram config button writes JSON.
 
-| Phase | Deliverable |
-|-------|-------------|
-| 1 | `LaneBook` + `GridSegmentStatus`; `buildLayoutOccupancy()`; expanded `sdc-grid-001` |
-| 2 | `groupLanes`, `connectionMidCols`, `fanoutExits` in `computeHorizontalLayout`; `sdc-route-002` |
-| 3 | `horizontalRouter.ts` → `routeConnections` (LaneBook-backed, structured route metadata) |
-| 4 | SDC-SCORE-001 in `scoreRouting.ts`; `pickBestLayout` + candidate expansion |
-| 5 | `sdc-route-001`, `sdc-route-003`, `sdc-route-004` registered |
-| 6 | Thick tube trunk + thin strand fans (`FanoutEdge`, `buildReactFlowGraph`) |
-
-**Verify:** `npm run verify` green (108 tests). **Smoke test:** user reports SP-3254 looks OK; no deep QA yet.
-
-**Dev loop:** `npm run dev` → `http://localhost:5173/?sample=sp3254` · `?gridDebug=1` for booked lanes.
-
-### User decision
-
-Stop here for now. Implement **automatic + manual adjustment modes** ([`SDC-UX-001`](./rules/SDC-UX-001.md)) in the **next chat** before more grid/routing testing.
+**Verify:** `npm run check`, `npm run test:ci`, `npm run build` green.
 
 ### Start next chat here
 
-1. Read [`SDC-UX-001.md`](./rules/SDC-UX-001.md) and [`CONTEXT.md`](./CONTEXT.md).
-2. **Existing UI shell:** `WorkflowCanvas.tsx` — segmented **Auto adjust / Manual adjust** (`autoAdjustEnabled`); Manual only adds **Reset to auto layout** (re-import). CSS for manual handles/guides in `splice-diagram.css` — not wired to new router.
-3. **Rule vs UI:** Spec says auto layout always runs; manual edits become **locked overrides** (`manual-locked` on grid), not a toggle that turns auto off. Plan reconciliation with user.
-4. **Grid hooks ready:** `LaneBook.tryReserve(..., "manual-locked")`, `buildLayoutOccupancy`, `horizontalRouter` booking — locks not persisted or applied yet.
-5. **After UX:** resume grid QA (reference CSVs, crossings, quad), score UI, oracle side tuning.
+1. Manual QA: `?sample=sp3254` — drag cable, splice, fiber; confirm lock badges, reroute, Reset.
+2. Resume grid/routing QA (reference CSVs, crossings).
+3. Quad hybrid locks + center quadrants (SDC-GRID-001 gaps).
 
-### Key files for UX work
+### Key files
 
 - Spec: `docs/agent/rules/SDC-UX-001.md`
+- Interaction: `src/features/interaction/`
 - Canvas: `src/features/canvas/WorkflowCanvas.tsx`
-- Grid: `src/features/grid/laneBook.ts`, `gridOccupancy.ts`
-- Layout/routing: `runImport.ts`, `pickBestLayout.ts`, `routeConnections.ts`
-- Export target: `SDC-EXPORT-001` (`DiagramConfig.manualLocks`)
+- Import: `src/features/import/runImport.ts`, `parseSdcJson.ts`
 
 ---
 
 ## Earlier — Grid + routing rebuild (2026-06-21)
 
-Implemented horizontal-first grid engine, group lanes, LaneBook router, SDC-SCORE-001, route validators, tube trunk visual. See git history for file-level detail.
+Horizontal-first grid engine, group lanes, LaneBook router, SDC-SCORE-001, route validators, tube trunk visual.
 
 ## Earlier sessions
 

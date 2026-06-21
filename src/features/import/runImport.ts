@@ -18,6 +18,10 @@ import type { NormalizedImport } from "./normalize";
 import { enrichParsedCsv, parseBentleyCsv } from "./parseBentleyCsv";
 import { inspectBentleyCsv, type InspectReport } from "./inspectBentleyCsv";
 import { parseSdcJson } from "./parseSdcJson";
+import {
+  rerunLayoutWithLocks,
+  type ManualLock,
+} from "@/features/interaction";
 
 export type ImportResult = {
   nodes: Node[];
@@ -34,6 +38,7 @@ export type ImportResult = {
   routing: RoutingResult;
   placementPlanId?: string;
   routeScore?: RouteQualityBreakdown;
+  manualLocks?: ManualLock[];
   error?: string;
 };
 
@@ -41,6 +46,10 @@ export type RunImportOptions = {
   layoutMode?: LayoutMode;
   /** When true (default), try placement candidates and pick lowest route score. */
   optimizeLayout?: boolean;
+  /** Locked manual overrides applied after auto layout (SDC-UX-001). */
+  manualLocks?: ManualLock[];
+  /** Preserve compatible locks when re-importing the same graph. */
+  preserveManualLocks?: ManualLock[];
 };
 
 const EMPTY_LAYOUT: LayoutResult = {
@@ -126,6 +135,7 @@ async function runCsvImport(
     undefined,
     options.optimizeLayout !== false,
     normalizedImport,
+    options.manualLocks ?? options.preserveManualLocks,
   );
 }
 
@@ -150,13 +160,15 @@ async function runJsonImport(text: string, options: RunImportOptions): Promise<I
   }
 
   const layoutMode = options.layoutMode ?? doc.layoutMode ?? "horizontal";
+  const manualLocks = doc.manualLocks ?? options.manualLocks;
   return finalizeImport(
     connectionGraph,
     null,
     layoutMode,
     doc.nodePositions,
-    options.optimizeLayout !== false && !doc.nodePositions,
+    options.optimizeLayout !== false && !doc.nodePositions && !manualLocks?.length,
     normalizedImport,
+    manualLocks,
   );
 }
 
@@ -167,11 +179,36 @@ async function finalizeImport(
   nodePositions?: Record<string, { x: number; y: number }>,
   optimizeLayout = true,
   normalizedImport?: NormalizedImport,
+  manualLocks: ManualLock[] = [],
 ): Promise<ImportResult> {
   let layout: LayoutResult;
   let routing: RoutingResult;
   let placementPlanId: string | undefined;
   let routeScore: RouteQualityBreakdown | undefined;
+
+  const hasLocks = manualLocks.length > 0;
+
+  if (hasLocks) {
+    const rerun = await rerunLayoutWithLocks(connectionGraph, layoutMode, manualLocks, {
+      optimizeLayout: false,
+    });
+    return {
+      nodes: rerun.nodes,
+      edges: rerun.edges,
+      zoneLayout: rerun.zoneLayout,
+      zoneMode: rerun.zoneMode,
+      laneBook: rerun.laneBook,
+      connectionGraph,
+      normalizedImport,
+      inspectReport,
+      layoutMode,
+      layout: rerun.layout,
+      routing: rerun.routing,
+      placementPlanId: rerun.placementPlanId,
+      routeScore: rerun.routeScore,
+      manualLocks,
+    };
+  }
 
   if (optimizeLayout && !nodePositions) {
     const optimized = await pickBestLayout(connectionGraph, layoutMode);
@@ -181,7 +218,7 @@ async function finalizeImport(
     routeScore = optimized.breakdown;
   } else {
     layout = await runLayoutEngine(connectionGraph, { layoutMode });
-    routing = routeConnections(connectionGraph, layout);
+    routing = routeConnections(connectionGraph, layout, manualLocks);
   }
 
   if (nodePositions) {
@@ -192,10 +229,10 @@ async function finalizeImport(
         existing.row = Math.round(pos.y / 24);
       }
     }
-    routing = routeConnections(connectionGraph, layout);
+    routing = routeConnections(connectionGraph, layout, manualLocks);
   }
 
-  const rf = buildReactFlowGraph(connectionGraph, layout, routing);
+  const rf = buildReactFlowGraph(connectionGraph, layout, routing, manualLocks);
 
   return {
     nodes: rf.nodes,
@@ -211,6 +248,7 @@ async function finalizeImport(
     routing,
     placementPlanId,
     routeScore,
+    manualLocks,
   };
 }
 
