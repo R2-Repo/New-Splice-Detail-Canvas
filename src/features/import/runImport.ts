@@ -58,6 +58,8 @@ const EMPTY_LAYOUT: LayoutResult = {
   splicePoints: [],
   groupLanes: new Map(),
   connectionRows: new Map(),
+  fanoutExits: new Map(),
+  connectionMidCols: new Map(),
 };
 
 function emptyRouting(): RoutingResult {

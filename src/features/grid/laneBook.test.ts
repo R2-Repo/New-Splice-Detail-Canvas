@@ -37,6 +37,20 @@ describe("LaneBook", () => {
     ).toBe(true);
   });
 
+  it("tracks blocked segments separately from occupied routes", () => {
+    const book = new LaneBook();
+    book.block({ orientation: "vertical", track: 5, spanStart: 0, spanEnd: 10 }, "labelBand");
+    expect(book.tryBook({ orientation: "vertical", track: 5, spanStart: 2, spanEnd: 8 })).toBe(false);
+    expect(book.tryBook({ orientation: "vertical", track: 6, spanStart: 2, spanEnd: 8 })).toBe(true);
+  });
+
+  it("exposes segment status on allSegments", () => {
+    const book = new LaneBook();
+    book.tryBook({ orientation: "vertical", track: 20, spanStart: 1, spanEnd: 5 }, "route-a");
+    expect(book.allSegments[0]?.status).toBe("occupied");
+    expect(book.booked.length).toBe(1);
+  });
+
   it("allows perpendicular segments at same grid location", () => {
     const book = new LaneBook();
     book.tryBook({ orientation: "vertical", track: 20, spanStart: 10, spanEnd: 14 });

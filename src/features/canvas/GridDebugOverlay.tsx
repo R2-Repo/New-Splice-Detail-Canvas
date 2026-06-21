@@ -140,17 +140,17 @@ export function GridDebugOverlay({
         />
         {laneLines}
         <text x={gridToPx(2)} y={28} className="grid-debug-overlay__zone-label">
-          leftCable
+          leftSideZone
         </text>
         <text
           x={gridToPx((zoneLayout?.centerStartCol ?? quadZoneLayout?.centerStartCol ?? 0) + 2)}
           y={28}
           className="grid-debug-overlay__zone-label"
         >
-          centerSplice
+          centerRoutingGrid
         </text>
         <text x={gridToPx((zoneLayout?.rightStartCol ?? quadZoneLayout?.rightStartCol ?? 0) + 2)} y={28} className="grid-debug-overlay__zone-label">
-          rightCable
+          rightSideZone
         </text>
         {quadZoneLayout ? (
           <>

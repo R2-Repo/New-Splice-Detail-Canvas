@@ -1,16 +1,10 @@
-import type { LaneSegment } from "@/features/grid/laneBook";
+import type { BookedLaneSegment, LaneSegment } from "@/features/grid/laneBook";
 
 import type { DiagramSnapshot, RuleModule, RuleViolation } from "../types";
 import { ruleId } from "../types";
 
 /**
- * SDC-GRID-001 — canvas grid system (routing-output integrity).
- *
- * Scoped to the grid invariants the routed output can be checked against today:
- * every connection produces a route, routes attach to lanes (no empty path
- * without an explicit error), and no two booked lane segments overlap. Full
- * lane/segment-status and bend-clearance rules arrive with the grid rebuild and
- * SDC-ROUTE-004. Unroutable legs surface as non-blocking warnings.
+ * SDC-GRID-001 — canvas grid system (routing-output integrity + segment status).
  */
 export const sdcGrid001: RuleModule = {
   id: ruleId("sdc-grid-001"),
@@ -53,6 +47,20 @@ export const sdcGrid001: RuleModule = {
           suggestedFix: "A routed connection must produce grid segments or report an error.",
         });
       }
+
+      for (const seg of route.laneSegments ?? []) {
+        if (segmentCrossesBlocked(seg, routing.laneBook.allSegments)) {
+          violations.push({
+            ruleId: ruleId("SDC-GRID-001"),
+            severity: "error",
+            message: `Connection ${route.connectionId} uses a lane segment blocked by reserved layout space.`,
+            objectType: "fiberRoute",
+            objectIds: [route.connectionId],
+            suggestedFix: "Reroute around cable, fanout, or label reserved areas.",
+          });
+          break;
+        }
+      }
     }
 
     for (const overlap of findLaneOverlaps(routing.laneBook.booked)) {
@@ -70,6 +78,22 @@ export const sdcGrid001: RuleModule = {
   },
 };
 
+function spansOverlap(a: LaneSegment, b: LaneSegment): boolean {
+  if (a.orientation !== b.orientation || a.track !== b.track) return false;
+  return a.spanStart < b.spanEnd && b.spanStart < a.spanEnd;
+}
+
+function segmentCrossesBlocked(
+  segment: LaneSegment,
+  all: readonly BookedLaneSegment[],
+): boolean {
+  for (const existing of all) {
+    if (existing.status !== "blocked" && existing.status !== "manual-locked") continue;
+    if (spansOverlap(segment, existing)) return true;
+  }
+  return false;
+}
+
 function findLaneOverlaps(segments: readonly LaneSegment[]): LaneSegment[] {
   const overlaps: LaneSegment[] = [];
   for (let i = 0; i < segments.length; i += 1) {
@@ -77,7 +101,6 @@ function findLaneOverlaps(segments: readonly LaneSegment[]): LaneSegment[] {
       const a = segments[i]!;
       const b = segments[j]!;
       if (a.orientation !== b.orientation || a.track !== b.track) continue;
-      // Strict overlap; touching at an endpoint is allowed (shared corner).
       if (a.spanStart < b.spanEnd && b.spanStart < a.spanEnd) {
         overlaps.push(a);
       }

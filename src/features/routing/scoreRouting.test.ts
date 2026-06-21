@@ -46,10 +46,13 @@ describe("scoreRoutingFromParts integration", () => {
         splicePoints: [],
         groupLanes: new Map(),
         connectionRows: new Map(),
+        fanoutExits: new Map(),
+        connectionMidCols: new Map(),
       },
       { laneBook: new LaneBook(), routes: [] },
     );
     expect(breakdown.score).toBe(0);
+    expect(breakdown.rejected).toBe(false);
     expect(breakdown.routeErrors).toBe(0);
   });
 });

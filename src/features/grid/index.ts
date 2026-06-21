@@ -13,7 +13,13 @@ export {
   snapToGrid,
   type GridPoint,
 } from "./coords";
-export { LaneBook, type LaneConflict, type LaneOrientation, type LaneSegment } from "./laneBook";
+export { LaneBook, type BookedLaneSegment, type LaneConflict, type LaneOrientation, type LaneSegment } from "./laneBook";
+export {
+  bendClearanceCols,
+  buildLayoutOccupancy,
+  cableGroupSeparationCols,
+  segmentKey,
+} from "./gridOccupancy";
 export {
   demoPlacementsFromImport,
   gridPointFromPlacement,

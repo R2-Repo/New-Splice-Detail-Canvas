@@ -85,6 +85,8 @@ export function emptySnapshot(layoutMode: LayoutMode = "horizontal"): DiagramSna
       splicePoints: [],
       groupLanes: new Map(),
       connectionRows: new Map(),
+      fanoutExits: new Map(),
+      connectionMidCols: new Map(),
     },
     routing: {
       laneBook: new LaneBook(),

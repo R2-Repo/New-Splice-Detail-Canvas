@@ -40,6 +40,7 @@ describe("SP-3254.5 layout optimization", () => {
   it("optimized import score stays within regression baseline", async () => {
     const snapshot = await buildSnapshotFromSp3254({ layoutMode: "horizontal" });
     const breakdown = scoreRouting(snapshot);
+    expect(breakdown.rejected).toBe(false);
     expect(breakdown.score).toBeLessThan(SP3254_HORIZONTAL_SCORE_BASELINE);
     expect(breakdown.bends).toBeGreaterThan(0);
   });

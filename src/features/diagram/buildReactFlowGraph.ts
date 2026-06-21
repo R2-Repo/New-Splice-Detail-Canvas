@@ -21,10 +21,15 @@ export type ReactFlowGraph = {
 const CABLE_BOX_W = 92;
 const CABLE_BOX_H = 30;
 
-/** Smooth breakout curve from the cable body anchor to a fiber start. */
-function fanPath(ax: number, ay: number, fx: number, fy: number): string {
-  const dx = (fx - ax) * 0.5;
-  return `M ${ax} ${ay} C ${ax + dx} ${ay}, ${fx - dx} ${fy}, ${fx} ${fy}`;
+/** Smooth breakout curve from a tube trunk junction to a fiber start. */
+function strandFanPath(jx: number, jy: number, fx: number, fy: number): string {
+  const dx = (fx - jx) * 0.45;
+  return `M ${jx} ${jy} C ${jx + dx} ${jy}, ${fx - dx} ${fy}, ${fx} ${fy}`;
+}
+
+/** Thick straight trunk from cable anchor to tube junction (oracle-style). */
+function tubeTrunkPath(ax: number, ay: number, jx: number, jy: number): string {
+  return `M ${ax} ${ay} L ${jx} ${jy}`;
 }
 
 export function buildReactFlowGraph(
@@ -82,6 +87,7 @@ export function buildReactFlowGraph(
   }
 
   const fanoutEdges: Edge[] = [];
+  const tubeTrunkDone = new Set<string>();
 
   for (const leg of graph.legs) {
     const placement = placementByNode.get(`cable-${leg.id}`);
@@ -138,12 +144,39 @@ export function buildReactFlowGraph(
     // Breakout fan: cable body anchor -> fiber, in the tube color.
     const anchor = cableAnchor.get(fiber.legId);
     if (anchor) {
+      const tubeKey = `${fiber.legId}::${fiber.tubeColor}`;
+      const tubeFibers = (fibersByLeg.get(fiber.legId) ?? []).filter((f) => f.tubeColor === fiber.tubeColor);
+      const tubeRows = tubeFibers
+        .map((f) => placementByNode.get(`fiber-${f.id}`)?.row)
+        .filter((r): r is number => typeof r === "number");
+      const tubeMidRow =
+        tubeRows.length > 0
+          ? Math.round((Math.min(...tubeRows) + Math.max(...tubeRows)) / 2)
+          : placement.row;
+      const jx = fx;
+      const jy = gridToPx(tubeMidRow);
+
+      if (!tubeTrunkDone.has(tubeKey)) {
+        tubeTrunkDone.add(tubeKey);
+        fanoutEdges.push({
+          id: `trunk-${tubeKey}`,
+          source: `cable-${fiber.legId}`,
+          target: `fiber-${fiber.id}`,
+          type: "fanout",
+          data: {
+            path: tubeTrunkPath(anchor.x, anchor.y, jx, jy),
+            color: tubeHex,
+            trunk: true,
+          },
+        });
+      }
+
       fanoutEdges.push({
         id: `fan-${fiber.id}`,
         source: `cable-${fiber.legId}`,
         target: `fiber-${fiber.id}`,
         type: "fanout",
-        data: { path: fanPath(anchor.x, anchor.y, fx, fy), color: tubeHex },
+        data: { path: strandFanPath(jx, jy, fx, fy), color: tubeHex, trunk: false },
       });
     }
   }

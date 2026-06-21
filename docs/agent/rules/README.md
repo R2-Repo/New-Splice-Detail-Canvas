@@ -131,14 +131,18 @@ Written since: **SDC-CONST-001** (layout constants/defaults) — see the active 
 
 Rule modules live in `src/features/rules/` (see [`../RULES_MODULAR.md`](../RULES_MODULAR.md)). Use the lowercase module id (e.g. `SDC-IMPORT-001` -> `sdc-import-001`) and emit `RuleViolation`s compatible with [SDC-VALIDATE-001] (severity, objectIds, sourceRows, suggestedFix). Only `error`-severity violations fail a run.
 
-### Implemented (data stage)
+### Implemented
 
 | Rule | Module | Notes |
 |---|---|---|
-| SDC-IMPORT-001 | `src/features/rules/sdc-import-001/` | Normalized-model integrity (parse gap, source rows). Model built by `src/features/import/normalize/normalizeImport.ts`. |
+| SDC-IMPORT-001 | `src/features/rules/sdc-import-001/` | Normalized-model integrity (parse gap, source rows). |
 | SDC-DATA-001 | `src/features/rules/sdc-data-001/` | Hierarchy: orphans, duplicate ids, empty tubes/cables. |
-| SDC-DATA-002 | `src/features/rules/sdc-data-002/` | Absolute number validity + inferred count; low-confidence inference is a warning. Does not require full tube population. |
-| SDC-CONNECT-001 | `src/features/rules/sdc-connect-001/` | One dot per pair, endpoints resolve, duplicate/identical detection. |
-| SDC-GRID-001 (partial) | `src/features/rules/sdc-grid-001/` | Routing-output integrity: route/connection count, lane-segment overlap, unroutable legs as warnings. Segment-status model in `src/features/grid/segmentStatus.ts`. Full lane/quadrant rebuild pending. |
+| SDC-DATA-002 | `src/features/rules/sdc-data-002/` | Absolute number validity + inferred count. |
+| SDC-CONNECT-001 | `src/features/rules/sdc-connect-001/` | One dot per pair, endpoints resolve. |
+| SDC-GRID-001 | `src/features/rules/sdc-grid-001/` | Lane booking integrity, blocked-zone violations, route count. |
+| SDC-ROUTE-001 | `src/features/rules/sdc-route-001/` | Routing zone + bend clearance (horizontal). |
+| SDC-ROUTE-002 | `src/features/rules/sdc-route-002/` | Buffer-tube group adjacent mid columns. |
+| SDC-ROUTE-003 | `src/features/rules/sdc-route-003/` | Crossings + shared occupied lanes. |
+| SDC-ROUTE-004 | `src/features/rules/sdc-route-004/` | Orthogonal geometry + bend limits. |
 
-Data-stage rules read `snapshot.normalizedImport` and return `[]` when it is absent. `sdc-grid-001` is routing-stage and reads `snapshot.routing`. Remaining rules (layout, route geometry, score, label, validate, export, visual) are spec-only. Shared numeric defaults are in `SDC-CONST-001` (`src/features/layout/sdcDefaults.ts`).
+Data-stage rules read `snapshot.normalizedImport` and return `[]` when absent. Routing-stage rules read `snapshot.routing`. Scoring: `src/features/routing/scoreRouting.ts` (SDC-SCORE-001). Shared defaults: `SDC_DEFAULTS` in `src/features/layout/sdcDefaults.ts`. Remaining rules (layout, label, validate, export, visual, UX) are spec-only or partial in render code.

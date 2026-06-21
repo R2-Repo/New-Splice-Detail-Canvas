@@ -1,19 +1,43 @@
 import type { ConnectionGraph, DiagramSide } from "@/features/diagram/types";
+import { gridToPx } from "@/features/grid/coords";
 import { detectLateVerticalBend } from "@/features/grid/routeOrthogonal";
+import { SDC_DEFAULTS } from "@/features/layout/sdcDefaults";
 import type { LayoutResult } from "@/features/layout/types";
 import type { DiagramSnapshot } from "@/features/rules/types";
 
 import type { RoutingResult } from "./routeConnections";
 
+/** SDC-SCORE-001 starting weights (relative priority stable). */
 export type ScoreWeights = {
-  crossings: number;
-  loopBacks: number;
-  bends: number;
+  unnecessaryCrossing: number;
+  controlledCrossing: number;
+  sharedLaneNearMiss: number;
+  spacingNearMiss: number;
+  extraBend: number;
+  pathSegment: number;
+  nestingBreak: number;
+  labelTruncation: number;
+  crowdedDot: number;
+  excessFanoutSpacing: number;
   verticalSpread: number;
-  routeErrors: number;
 };
 
-export const DEFAULT_SCORE_WEIGHTS: ScoreWeights = {
+export const SDC_SCORE_WEIGHTS: ScoreWeights = {
+  unnecessaryCrossing: 100,
+  controlledCrossing: 25,
+  sharedLaneNearMiss: 80,
+  spacingNearMiss: 40,
+  extraBend: 15,
+  pathSegment: 1,
+  nestingBreak: 30,
+  labelTruncation: 10,
+  crowdedDot: 20,
+  excessFanoutSpacing: 10,
+  verticalSpread: 1,
+};
+
+/** @deprecated Legacy weights — use SDC_SCORE_WEIGHTS. */
+export const DEFAULT_SCORE_WEIGHTS = {
   crossings: 1000,
   loopBacks: 500,
   bends: 100,
@@ -22,12 +46,17 @@ export const DEFAULT_SCORE_WEIGHTS: ScoreWeights = {
 };
 
 export type RouteQualityBreakdown = {
+  rejected: boolean;
+  hardFailures: string[];
   crossings: number;
   loopBacks: number;
   bends: number;
   verticalSpread: number;
   routeErrors: number;
+  nestingBreaks: number;
+  pathSegments: number;
   score: number;
+  candidateId?: string;
 };
 
 export type LineSegment = { x1: number; y1: number; x2: number; y2: number };
@@ -58,6 +87,23 @@ export function parseSvgPath(path: string): LineSegment[] {
   }
 
   return segments.filter((s) => s.x1 !== s.x2 || s.y1 !== s.y2);
+}
+
+export function gridPointsToSegments(
+  points: Array<{ col: number; row: number }>,
+): LineSegment[] {
+  const segments: LineSegment[] = [];
+  for (let i = 1; i < points.length; i += 1) {
+    const a = points[i - 1]!;
+    const b = points[i]!;
+    segments.push({
+      x1: gridToPx(a.col),
+      y1: gridToPx(a.row),
+      x2: gridToPx(b.col),
+      y2: gridToPx(b.row),
+    });
+  }
+  return segments;
 }
 
 export function countOrthogonalBends(segments: LineSegment[]): number {
@@ -95,14 +141,8 @@ function segmentsIntersect(a: LineSegment, b: LineSegment): boolean {
 }
 
 function shareEndpoint(a: LineSegment, b: LineSegment): boolean {
-  const pointsA = [
-    `${a.x1},${a.y1}`,
-    `${a.x2},${a.y2}`,
-  ];
-  const pointsB = [
-    `${b.x1},${b.y1}`,
-    `${b.x2},${b.y2}`,
-  ];
+  const pointsA = [`${a.x1},${a.y1}`, `${a.x2},${a.y2}`];
+  const pointsB = [`${b.x1},${b.y1}`, `${b.x2},${b.y2}`];
   return pointsA.some((p) => pointsB.includes(p));
 }
 
@@ -182,40 +222,115 @@ export function computeVerticalSpread(graph: ConnectionGraph, layout: LayoutResu
   return spread;
 }
 
+/** Count dest-tube groups whose connections use non-adjacent mid tracks. */
+export function countNestingBreaks(layout: LayoutResult, routing: RoutingResult): number {
+  const byGroupTracks = new Map<string, number[]>();
+
+  for (const [groupId, preferred] of layout.groupLanes) {
+    byGroupTracks.set(groupId, [preferred]);
+  }
+
+  for (const route of routing.routes) {
+    const mid = route.midTrack;
+    if (mid === undefined) continue;
+    for (const [groupId, preferred] of layout.groupLanes) {
+      if (Math.abs(mid - preferred) <= 1) {
+        const list = byGroupTracks.get(groupId) ?? [];
+        list.push(mid);
+        byGroupTracks.set(groupId, list);
+      }
+    }
+  }
+
+  let breaks = 0;
+  for (const tracks of byGroupTracks.values()) {
+    const unique = [...new Set(tracks)].sort((a, b) => a - b);
+    for (let i = 1; i < unique.length; i += 1) {
+      if (unique[i]! - unique[i - 1]! > 1) breaks += 1;
+    }
+  }
+  return breaks;
+}
+
+function routeSegmentsForScoring(route: RoutingResult["routes"][number]): LineSegment[] {
+  if (route.gridPoints && route.gridPoints.length >= 2) {
+    return gridPointsToSegments(route.gridPoints);
+  }
+  if (route.path) return parseSvgPath(route.path);
+  return [];
+}
+
 export function scoreRoutingFromParts(
   graph: ConnectionGraph,
   layout: LayoutResult,
   routing: RoutingResult,
-  weights: ScoreWeights = DEFAULT_SCORE_WEIGHTS,
+  weights: ScoreWeights = SDC_SCORE_WEIGHTS,
+  candidateId?: string,
 ): RouteQualityBreakdown {
+  const hardFailures: string[] = [];
+  const routeErrors = routing.routes.filter((r) => !r.path || r.routeError).length;
+
+  if (routeErrors > 0) {
+    hardFailures.push(`${routeErrors} connection(s) failed to route`);
+  }
+
   const allSegments: LineSegment[][] = [];
   let bends = 0;
+  let pathSegments = 0;
 
   for (const route of routing.routes) {
-    if (!route.path) continue;
-    const segments = parseSvgPath(route.path);
+    if (route.routeError) continue;
+    const segments = routeSegmentsForScoring(route);
+    if (segments.length === 0 && route.path) {
+      hardFailures.push(`Connection ${route.connectionId} has empty segment list`);
+    }
     allSegments.push(segments);
-    bends += countOrthogonalBends(segments);
+    const routeBends = route.bendCount ?? countOrthogonalBends(segments);
+    bends += routeBends;
+    pathSegments += segments.length;
+
+    if (routeBends > SDC_DEFAULTS.bends.hardMax) {
+      hardFailures.push(`Connection ${route.connectionId} exceeds hard bend limit (${routeBends})`);
+    }
   }
 
   const crossings = countSegmentCrossings(allSegments);
   const loopBacks = countLoopBacks(graph, layout, routing);
   const verticalSpread = computeVerticalSpread(graph, layout);
-  const routeErrors = routing.routes.filter((r) => !r.path || r.routeError).length;
+  const nestingBreaks = countNestingBreaks(layout, routing);
 
-  const score =
-    crossings * weights.crossings +
-    loopBacks * weights.loopBacks +
-    bends * weights.bends +
-    verticalSpread * weights.verticalSpread +
-    routeErrors * weights.routeErrors;
+  const preferredMax = SDC_DEFAULTS.bends.preferredMaxTwoSided;
+  const extraBends = Math.max(0, bends - preferredMax * graph.connections.length);
 
-  return { crossings, loopBacks, bends, verticalSpread, routeErrors, score };
+  const rejected = hardFailures.length > 0;
+
+  const score = rejected
+    ? Number.POSITIVE_INFINITY
+    : crossings * weights.unnecessaryCrossing +
+      loopBacks * weights.controlledCrossing +
+      extraBends * weights.extraBend +
+      verticalSpread * weights.verticalSpread +
+      nestingBreaks * weights.nestingBreak +
+      Math.max(0, pathSegments - graph.connections.length * 4) * weights.pathSegment;
+
+  return {
+    rejected,
+    hardFailures,
+    crossings,
+    loopBacks,
+    bends,
+    verticalSpread,
+    routeErrors,
+    nestingBreaks,
+    pathSegments,
+    score,
+    candidateId,
+  };
 }
 
 export function scoreRouting(
   snapshot: DiagramSnapshot,
-  weights: ScoreWeights = DEFAULT_SCORE_WEIGHTS,
+  weights: ScoreWeights = SDC_SCORE_WEIGHTS,
 ): RouteQualityBreakdown {
   return scoreRoutingFromParts(
     snapshot.connectionGraph,

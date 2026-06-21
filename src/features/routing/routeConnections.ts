@@ -1,20 +1,28 @@
-import { gridToPx, pixelToGridPoint, type GridPoint } from "@/features/grid/coords";
-import { LaneBook } from "@/features/grid/laneBook";
+import { pixelToGridPoint, type GridPoint } from "@/features/grid/coords";
+import { buildLayoutOccupancy } from "@/features/grid/gridOccupancy";
+import { LaneBook, type LaneSegment } from "@/features/grid/laneBook";
 import type { GridNodePlacement } from "@/features/grid/placement";
 import type { HorizontalZoneLayout } from "@/features/grid/zones";
 import { isInQuadCenter, type QuadZoneLayout } from "@/features/grid/quadZones";
+import { classifyStrandGroups } from "@/features/diagram/strandGroups";
 import type { ConnectionGraph } from "@/features/diagram/types";
-import { SDC_DEFAULTS } from "@/features/layout/sdcDefaults";
 import type { LayoutResult, ZoneLayout } from "@/features/layout/types";
 
-/** Bend clearance expressed in grid columns (SDC-CONST-001 / SDC-ROUTE-001). */
-const CLEARANCE_COLS = Math.max(1, Math.round(SDC_DEFAULTS.spacing.minBendClearancePx / SDC_DEFAULTS.grid.pitchPx));
+import {
+  buildDestTubeGroupMap,
+  gridPointsToPath,
+  preferredMidColForConnection,
+  routeHorizontalConnection,
+} from "./horizontalRouter";
 
 export type RoutedConnection = {
   connectionId: string;
   path: string;
   routeError?: string;
   midTrack?: number;
+  gridPoints?: GridPoint[];
+  laneSegments?: LaneSegment[];
+  bendCount?: number;
 };
 
 export type RoutingResult = {
@@ -26,20 +34,36 @@ function placementMap(placements: GridNodePlacement[]): Map<string, GridPoint> {
   return new Map(placements.map((p) => [p.nodeId, { col: p.col, row: p.row }]));
 }
 
+function fanoutExitPoint(
+  fiberId: string,
+  fiberPlacement: GridPoint,
+  layout: LayoutResult,
+): GridPoint {
+  const exitCol = layout.fanoutExits.get(fiberId) ?? fiberPlacement.col;
+  return { col: exitCol, row: fiberPlacement.row };
+}
+
 export function routeConnections(
   graph: ConnectionGraph,
   layout: LayoutResult,
 ): RoutingResult {
-  const laneBook = new LaneBook();
+  const laneBook = buildLayoutOccupancy(layout);
   const points = placementMap(layout.placements);
   const routes: RoutedConnection[] = [];
+  const strandInput = classifyStrandGroups(graph);
+  const destGroupMap = buildDestTubeGroupMap(strandInput.groups);
 
-  for (const conn of graph.connections) {
-    const source = points.get(`fiber-${conn.fromFiberId}`);
+  const order = layout.splicePoints.map((sp) => sp.connectionId);
+
+  for (const connId of order) {
+    const conn = graph.connections.find((c) => c.id === connId);
+    if (!conn) continue;
+
+    const fromPlacement = points.get(`fiber-${conn.fromFiberId}`);
+    const toPlacement = points.get(`fiber-${conn.toFiberId}`);
     const splice = points.get(`splice-${conn.id}`);
-    const target = points.get(`fiber-${conn.toFiberId}`);
 
-    if (!source || !splice || !target) {
+    if (!fromPlacement || !toPlacement || !splice) {
       routes.push({
         connectionId: conn.id,
         path: "",
@@ -49,6 +73,8 @@ export function routeConnections(
     }
 
     if (layout.layoutMode === "quad" && layout.zoneLayout.mode === "quad") {
+      const source = fanoutExitPoint(conn.fromFiberId, fromPlacement, layout);
+      const target = fanoutExitPoint(conn.toFiberId, toPlacement, layout);
       const quadRoute = routeQuadSpliceLeg(source, splice, target, layout.zoneLayout.quad, laneBook);
       routes.push({ connectionId: conn.id, ...quadRoute });
       continue;
@@ -59,78 +85,43 @@ export function routeConnections(
       continue;
     }
 
-    routes.push({ connectionId: conn.id, ...buildFannedRoute(source, splice, target) });
+    const fromLeg = graph.legs.find((l) => l.id === conn.fromLegId);
+    const leftFiberId = fromLeg?.side === "left" ? conn.fromFiberId : conn.toFiberId;
+    const rightFiberId = fromLeg?.side === "left" ? conn.toFiberId : conn.fromFiberId;
+
+    const leftFiberPlacement = points.get(`fiber-${leftFiberId}`);
+    const rightFiberPlacement = points.get(`fiber-${rightFiberId}`);
+    if (!leftFiberPlacement || !rightFiberPlacement) {
+      routes.push({ connectionId: conn.id, path: "", routeError: "Missing side fiber placement" });
+      continue;
+    }
+
+    const leftExit = fanoutExitPoint(leftFiberId, leftFiberPlacement, layout);
+    const rightExit = fanoutExitPoint(rightFiberId, rightFiberPlacement, layout);
+    const preferredMid = layout.connectionMidCols.get(conn.id) ?? preferredMidColForConnection(conn.id, layout.groupLanes, destGroupMap);
+
+    const structured = routeHorizontalConnection(
+      leftExit,
+      splice,
+      rightExit,
+      layout.zoneLayout.horizontal,
+      laneBook,
+      preferredMid,
+      conn.id,
+    );
+
+    routes.push({
+      connectionId: conn.id,
+      path: structured.path,
+      routeError: structured.routeError,
+      midTrack: structured.midTrack,
+      gridPoints: structured.gridPoints,
+      laneSegments: structured.laneSegments,
+      bendCount: structured.bendCount,
+    });
   }
 
   return { laneBook, routes };
-}
-
-/** Orthogonal leg from a fanout exit point toward the fusion dot (3 grid points). */
-function legPoints(fiber: GridPoint, dot: GridPoint): GridPoint[] {
-  const dir = fiber.col <= dot.col ? 1 : -1;
-  let bendCol = fiber.col + dir * CLEARANCE_COLS;
-  bendCol = dir === 1 ? Math.min(bendCol, dot.col) : Math.max(bendCol, dot.col);
-  return [
-    { col: fiber.col, row: fiber.row },
-    { col: bendCol, row: fiber.row },
-    { col: bendCol, row: dot.row },
-    { col: dot.col, row: dot.row },
-  ];
-}
-
-/** Build a fanned orthogonal path: from-fiber -> fusion dot -> to-fiber. */
-function buildFannedRoute(
-  source: GridPoint,
-  splice: GridPoint,
-  target: GridPoint,
-): Omit<RoutedConnection, "connectionId"> {
-  const left = legPoints(source, splice);
-  const right = legPoints(target, splice).reverse();
-  const points = dedupePoints([...left, ...right.slice(1)]);
-  return { path: pointsToPath(points), midTrack: splice.col };
-}
-
-function dedupePoints(points: GridPoint[]): GridPoint[] {
-  const out: GridPoint[] = [];
-  for (const p of points) {
-    const last = out[out.length - 1];
-    if (last && last.col === p.col && last.row === p.row) continue;
-    out.push(p);
-  }
-  return out;
-}
-
-const CORNER_RADIUS = 8;
-
-function towards(
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-  r: number,
-): { x: number; y: number } {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const len = Math.hypot(dx, dy) || 1;
-  const rr = Math.min(r, len / 2);
-  return { x: from.x + (dx / len) * rr, y: from.y + (dy / len) * rr };
-}
-
-/** Orthogonal polyline with rounded corners (quadratic bevels at each bend). */
-function pointsToPath(points: GridPoint[]): string {
-  const pts = points.map((p) => ({ x: gridToPx(p.col), y: gridToPx(p.row) }));
-  if (pts.length < 3) {
-    return pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-  }
-
-  let d = `M ${pts[0]!.x} ${pts[0]!.y}`;
-  for (let i = 1; i < pts.length - 1; i += 1) {
-    const cur = pts[i]!;
-    const a = towards(cur, pts[i - 1]!, CORNER_RADIUS);
-    const b = towards(cur, pts[i + 1]!, CORNER_RADIUS);
-    d += ` L ${a.x} ${a.y} Q ${cur.x} ${cur.y} ${b.x} ${b.y}`;
-  }
-  const last = pts[pts.length - 1]!;
-  d += ` L ${last.x} ${last.y}`;
-  return d;
 }
 
 export function routeQuadSpliceLeg(
@@ -157,16 +148,16 @@ export function routeQuadSpliceLeg(
     return { path: "", routeError: "Quad lane conflict" };
   }
 
-  const sx = gridToPx(source.col);
-  const sy = gridToPx(source.row);
-  const mx = gridToPx(midCol);
-  const spx = gridToPx(splice.col);
-  const spy = gridToPx(splice.row);
-  const tx = gridToPx(target.col);
-  const ty = gridToPx(target.row);
+  const gridPoints: GridPoint[] = [
+    source,
+    { col: midCol, row: source.row },
+    { col: midCol, row: splice.row },
+    splice,
+    { col: splice.col, row: target.row },
+    target,
+  ];
 
-  const path = `M ${sx} ${sy} L ${mx} ${sy} L ${mx} ${spy} L ${spx} ${spy} L ${spx} ${ty} L ${tx} ${ty}`;
-  return { path, midTrack: midCol };
+  return { path: gridPointsToPath(gridPoints), midTrack: midCol, gridPoints, bendCount: 4 };
 }
 
 function allocateQuadMidColumn(
@@ -181,7 +172,7 @@ function allocateQuadMidColumn(
 
   for (let col = quad.centerStartCol; col <= quad.centerEndCol; col += 1) {
     if (!isInQuadCenter(col, rowSplice, quad)) continue;
-    const conflict = laneBook.isBooked({
+    const conflict = laneBook.conflicts({
       orientation: "vertical",
       track: col,
       spanStart: rowStart,
@@ -224,3 +215,5 @@ export function extractHorizontalZoneLayout(zone: ZoneLayout): HorizontalZoneLay
 export function extractQuadZoneLayout(zone: ZoneLayout): QuadZoneLayout | null {
   return zone.mode === "quad" ? zone.quad : null;
 }
+
+export { gridPointsToPath };

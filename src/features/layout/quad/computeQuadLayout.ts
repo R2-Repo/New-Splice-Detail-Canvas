@@ -97,7 +97,20 @@ export async function computeQuadLayout(
     splicePoints,
     groupLanes,
     connectionRows,
+    fanoutExits: buildFanoutExitsFromPlacements(placements),
+    connectionMidCols: new Map(
+      strandInput.globalConnectionOrder.map((id, i) => [id, quad.centerStartCol + i]),
+    ),
   };
+}
+
+function buildFanoutExitsFromPlacements(placements: GridNodePlacement[]): Map<string, number> {
+  const fanoutExits = new Map<string, number>();
+  for (const p of placements) {
+    if (!p.nodeId.startsWith("fiber-")) continue;
+    fanoutExits.set(p.nodeId.replace("fiber-", ""), p.col);
+  }
+  return fanoutExits;
 }
 
 function quadCablePosition(

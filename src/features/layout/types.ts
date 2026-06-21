@@ -31,8 +31,13 @@ export type LayoutResult = {
   zoneLayout: ZoneLayout;
   placements: GridNodePlacement[];
   splicePoints: Array<{ connectionId: string; point: GridPoint }>;
+  /** Buffer-tube group id -> preferred vertical mid column in center routing grid. */
   groupLanes: Map<string, number>;
   connectionRows: Map<string, number>;
+  /** Fiber id -> fanout exit column (routing start point). */
+  fanoutExits: Map<string, number>;
+  /** Connection id -> preferred vertical mid column in center routing grid. */
+  connectionMidCols: Map<string, number>;
 };
 
 export type LayoutOptions = {

@@ -34,7 +34,9 @@ export async function pickBestLayout(
       strandInput,
     });
     const routing = routeConnections(graph, layout);
-    const breakdown = scoreRoutingFromParts(graph, layout, routing);
+    const breakdown = scoreRoutingFromParts(graph, layout, routing, undefined, plan.id);
+
+    if (breakdown.rejected) continue;
 
     if (!best || breakdown.score < best.breakdown.score) {
       best = { plan, layout, routing, breakdown };

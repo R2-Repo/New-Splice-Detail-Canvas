@@ -1,6 +1,17 @@
 # Rebuild status
 
-> **Status:** SDC rule pack adopted as canonical specs (`SDC-RULES-2026-06`). Import, layout, routing, and grid code exist from the prior SP-3254 phase and will be rebuilt to match the rules.
+> **Status:** SDC rule pack adopted (`SDC-RULES-2026-06`). Import, horizontal grid/routing, and validators largely rebuilt; **interaction (SDC-UX-001) is next.**
+
+## Rebuild progress
+
+| Step | Rules | Status |
+|------|-------|--------|
+| 1 Import | SDC-IMPORT/DATA/CONNECT | Done — normalized model + validators |
+| 2 Grid | SDC-GRID-001 | Done (horizontal); quad deferred |
+| 3 Layout | SDC-LAYOUT-* | Partial — fanout geometry + side assignment; not all layout validators |
+| 4 Routing | SDC-ROUTE-*, SDC-SCORE-001 | Done (horizontal); validators registered |
+| 5 Interaction | **SDC-UX-001** | **Next** — toolbar shell only |
+| 6 Export | SDC-EXPORT-001, etc. | Not started |
 
 ## Product goal (unchanged)
 

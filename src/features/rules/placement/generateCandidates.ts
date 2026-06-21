@@ -72,6 +72,17 @@ export function generateDefaultCandidates(
   if (layoutMode === "horizontal") {
     const mirrored = mirrorHorizontalSides(base);
     candidates.push(planFromAssignment("mirror-sides", graph, mirrored));
+
+    for (const side of HORIZONTAL_SIDES) {
+      const stack = stackOrderForSide(graph, side, base);
+      if (stack.length >= 2) {
+        const swapped = buildStackOrder(graph, base);
+        swapped.set(side, swapStackLegs(stack, stack[0]!, stack[1]!));
+        candidates.push(
+          planFromAssignment(`swap-${side}-stack`, graph, base, swapped),
+        );
+      }
+    }
   }
 
   return candidates;
